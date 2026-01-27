@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Login - DailyWord</title>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body{
+      font-family:'Georgia','Times New Roman',serif;
+      background:linear-gradient(-45deg,#2c3e50,#4a235a,#154360);
+      background-size:400% 400%;
+      animation:globalBG 15s ease infinite;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      padding: 1rem;
+    }
+
+    @keyframes globalBG{
+      0%{background-position:0% 50%;}
+      50%{background-position:100% 50%;}
+      100%{background-position:0% 50%;}
+    }
+
+    /* Floating Letters Background */
+    .floating-letters{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      z-index:-1;
+    }
+    .letter{
+      position:absolute;
+      font-size:18px;
+      font-weight:bold;
+      color:rgba(255,255,255,.10);
+      font-family:'Georgia',serif;
+      opacity:0;
+      animation: floatLetter 12s linear infinite, fadeLetter 5s ease-in-out infinite;
+    }
+    @keyframes floatLetter{
+      0%{transform:translateY(-120vh) rotate(0deg);}
+      100%{transform:translateY(120vh) rotate(360deg);}
+    }
+    @keyframes fadeLetter{
+      0%,100%{opacity:0;}
+      50%{opacity:.8;}
+    }
+
+    /* Main Container (book/paper theme) */
+    .container{
+      background:linear-gradient(45deg,#fff5e6,#fff);
+      width:100%;
+      max-width:420px;
+      padding:2.5rem 2rem;
+      border-radius:12px;
+      border:2px solid #d4a76a;
+      box-shadow:0 30px 50px rgba(0,0,0,.25),
+                 inset 0 0 0 1px #d4a76a,
+                 inset 0 0 30px rgba(139,69,19,.1);
+      position:relative;
+      z-index:1;
+      animation:bookOpen 1.2s cubic-bezier(.23,1,.32,1) forwards;
+    }
+
+    @keyframes bookOpen{
+      0% { transform: scale(0.8) rotateX(-15deg) translateY(50px); opacity: 0; filter: blur(5px); }
+      100% { transform: scale(1) rotateX(0deg) translateY(0); opacity: 1; filter: blur(0); }
+    }
+
+    /* Page curl */
+    .container::before{
+      content:"";
+      position:absolute; top:0; right:0;
+      width:45px; height:45px;
+      background:linear-gradient(225deg,transparent 50%,rgba(212,167,106,.3) 50%);
+      border-radius:0 12px 0 8px;
+      animation:pageCurl 2s ease-in-out infinite alternate;
+    }
+    @keyframes pageCurl{0%{transform:rotate(0deg)}100%{transform:rotate(-3deg)}}
+
+    /* Logo / Title */
+    .logo{
+      text-align:center;
+      font-size:3.2rem;
+      margin-bottom:.7rem;
+      animation: bookFloat 3s ease-in-out infinite alternate;
+      filter: drop-shadow(0 5px 15px rgba(139, 69, 19, 0.3));
+    }
+    @keyframes bookFloat{
+      0%{transform:translateY(0) rotate(0deg);}
+      100%{transform:translateY(-10px) rotate(2deg);}
+    }
+
+    h1{
+      text-align:center;
+      font-size:2.1rem;
+      margin-bottom:.4rem;
+      font-weight:900;
+      letter-spacing:1px;
+      background:linear-gradient(45deg,#8b4513,#a0522d,#d2691e);
+      background-size:200% 200%;
+      -webkit-background-clip:text;
+      background-clip:text;
+      -webkit-text-fill-color:transparent;
+      animation:titleGlow 3s ease-in-out infinite alternate;
+      text-shadow:2px 2px 0 rgba(139,69,19,.1);
+    }
+    @keyframes titleGlow{
+      0%{filter:drop-shadow(0 0 6px rgba(139,69,19,.5));background-position:0% 50%;}
+      100%{filter:drop-shadow(0 0 14px rgba(139,69,19,.8));background-position:100% 50%;}
+    }
+
+    .subtitle{
+      text-align:center;
+      color:#5d4037;
+      margin-bottom:1.6rem;
+      font-size:1rem;
+      font-style:italic;
+      opacity:0;
+      transform:translateY(10px);
+      animation:fadeIn 1.2s ease-out .45s forwards;
+      padding-bottom:12px;
+      position:relative;
+    }
+    @keyframes fadeIn{to{opacity:1;transform:translateY(0)}}
+    .subtitle::after{
+      content:"";
+      position:absolute; bottom:0; left:25%;
+      width:50%; height:1px;
+      background:linear-gradient(90deg,transparent,#8b4513,transparent);
+      animation:lineGrow 2s ease-out;
+    }
+    @keyframes lineGrow{
+      from{width:0;left:50%}
+      to{width:50%;left:25%}
+    }
+
+    /* Messages */
+    .message{
+      padding:12px;
+      border-radius:0 6px 6px 0;
+      margin: 0 0 12px;
+      display:none;
+      font-size:.95rem;
+      font-weight:600;
+      border-left:4px solid transparent;
+    }
+    .message.success{
+      display:block;
+      color:#1b5e20;
+      background:rgba(27,94,32,.12);
+      border-left-color:#1b5e20;
+    }
+    .message.error{
+      display:block;
+      color:#b71c1c;
+      background:rgba(183,28,28,.15);
+      border-left-color:#b71c1c;
+      animation:shake .4s cubic-bezier(.36,.07,.19,.97) both;
+    }
+
+    /* Section headings inside forms */
+    .section-title{
+      font-size:1.25rem;
+      margin: 6px 0 14px;
+      color:#6d4c41;
+      font-weight:800;
+      letter-spacing:.2px;
+    }
+
+    /* Form */
+    form{
+      opacity:0;
+      transform:translateX(-15px);
+      animation:formSlide 1s ease-out .75s forwards;
+    }
+    @keyframes formSlide{to{opacity:1;transform:translateX(0)}}
+
+    .form-group{ margin-bottom: 14px; }
+
+    label{
+      display:block;
+      font-weight:700;
+      margin: 0 0 8px;
+      color:#5d4037;
+    }
+
+    input{
+      width:100%;
+      padding:14px 16px;
+      border:2px solid transparent;
+      border-radius:8px;
+      background:linear-gradient(#faf3e5,#fff);
+      font-family:'Georgia',serif;
+      font-size:1rem;
+      color:#3e342c;
+      transition:all .3s ease;
+      box-shadow:inset 0 2px 8px rgba(0,0,0,.08);
+    }
+    input:focus{
+      outline:none;
+      border-color:#8b4513;
+      background:linear-gradient(#fff,#faf3e5);
+      box-shadow:inset 0 2px 15px rgba(139,69,19,.15);
+      transform:translateY(-2px);
+    }
+    input::placeholder{
+      color:#8b6b4b;
+      font-style:italic;
+    }
+
+    /* Password toggle */
+    .password-wrapper{
+      position:relative;
+    }
+    .password-wrapper input{
+      padding-right:45px;
+    }
+    .password-toggle{
+      position:absolute;
+      right:15px;
+      top:50%;
+      transform:translateY(-50%);
+      cursor:pointer;
+      color:#8b4513;
+      font-size:1.2rem;
+      padding:5px;
+      user-select:none;
+      transition:color .2s;
+    }
+    .password-toggle:hover{ color:#d2691e; }
+
+    /* Buttons */
+    .btn{
+      width:100%;
+      padding:14px;
+      border:none;
+      border-radius:6px;
+      background:linear-gradient(45deg,#8b4513,#a0522d,#d2691e);
+      color:#fff;
+      font-weight:700;
+      font-size:1.05rem;
+      cursor:pointer;
+      position:relative;
+      overflow:hidden;
+      box-shadow:0 6px 12px rgba(139,69,19,.4);
+      transition:transform .2s, box-shadow .2s;
+      margin-top: 8px;
+    }
+    .btn:hover{
+      transform:translateY(-3px);
+      box-shadow:0 10px 20px rgba(139,69,19,.6);
+      background:linear-gradient(45deg,#a0522d,#d2691e,#8b4513);
+    }
+    .btn::before{
+      content:"";
+      position:absolute; top:0; left:-110%;
+      width:55%; height:100%;
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);
+      transition:left .7s ease;
+    }
+    .btn:hover::before{ left:110%; }
+
+    .toggle-form{
+      text-align:center;
+      color:#5d4037;
+      font-size:.95rem;
+      margin-top: 12px;
+    }
+    .toggle-form a{
+      color:#8b4513;
+      cursor:pointer;
+      text-decoration:none;
+      font-weight:800;
+      padding-bottom:2px;
+      border-bottom:1px dotted transparent;
+      transition:all .2s;
+    }
+    .toggle-form a:hover{
+      color:#d2691e;
+      border-bottom-color:#d2691e;
+    }
+
+    .footer{
+      text-align:center;
+      margin-top:1.4rem;
+      font-size:.95rem;
+      color:#5d4037;
+      opacity:0;
+      animation:footerFade 1.2s ease-out 1s forwards;
+    }
+    @keyframes footerFade{to{opacity:1}}
+    .footer a{
+      color:#8b4513;
+      text-decoration:none;
+      margin:0 6px;
+      position:relative;
+      padding-bottom:2px;
+      transition:all .2s;
+    }
+    .footer a:hover{
+      color:#d2691e;
+      border-bottom:2px dotted #d2691e;
+    }
+
+    /* Shake (used for message + container) */
+    @keyframes shake{
+      0%,100%{transform:translateX(0)}
+      20%,60%{transform:translateX(-8px)}
+      40%,80%{transform:translateX(8px)}
+    }
+
+    @media (max-width:480px){
+      .container{padding:1.8rem 1.5rem;}
+      h1{font-size:1.7rem;}
+      .subtitle{font-size:.92rem;}
+      .btn{font-size:.95rem;}
+      .password-toggle{font-size:1.1rem; right:10px;}
+      .password-wrapper input{padding-right:40px;}
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Floating Letters Background -->
+  <div class="floating-letters" id="floatingLetters"></div>
+
+  <div class="container">
+    <div class="logo">📚</div>
+    <h1>VOCABHUB</h1>
+    <p class="subtitle">Learn a word every day</p>
+
+    <div id="message" class="message"></div>
+
+    <!-- LOGIN FORM -->
+    <form id="loginForm" style="display:block;">
+      <div class="section-title">👤 Login</div>
+
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="login-email" placeholder="your@email.com" required />
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <div class="password-wrapper">
+          <input type="password" id="login-password" placeholder="••••••" required />
+          <span class="password-toggle" id="loginPasswordToggle">👁️</span>
+        </div>
+      </div>
+
+      <button type="submit" class="btn">Login</button>
+
+      <div class="toggle-form">
+        Don't have account? <a onclick="toggleForm()">Sign Up</a>
+      </div>
+    </form>
+
+    <!-- SIGNUP FORM -->
+    <form id="signupForm" style="display:none;">
+      <div class="section-title">✍️ Sign Up</div>
+
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="signup-name" placeholder="Your name" required />
+      </div>
+
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="signup-email" placeholder="your@email.com" required />
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <div class="password-wrapper">
+          <input type="password" id="signup-password" placeholder="••••••" required />
+          <span class="password-toggle" id="signupPasswordToggle">👁️</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Mobile (Optional)</label>
+        <input type="tel" id="signup-mobile" placeholder="9876543210" />
+      </div>
+
+      <button type="submit" class="btn">Sign Up</button>
+
+      <div class="toggle-form">
+        Already have account? <a onclick="toggleForm()">Login</a>
+      </div>
+    </form>
+
+    <div class="footer">
+      Admin account? <a onclick="location.href='/admin-login'">Admin Login →</a> |
+      <a onclick="location.href='/'">Home</a>
+    </div>
+  </div>
+
+  <script>
+    // --- BACKGROUND ANIMATION ---
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+    const flContainer = document.getElementById('floatingLetters');
+    const getRandomDelay = (max) => Math.random() * max;
+
+    for (let i = 0; i < 25; i++) {
+      const el = document.createElement('div');
+      el.className = 'letter';
+      el.textContent = letters[Math.floor(Math.random() * letters.length)];
+      el.style.left = `${Math.random() * 100}%`;
+      el.style.top = `${Math.random() * 100}%`;
+      el.style.animationDelay = `${getRandomDelay(5)}s`;
+      flContainer.appendChild(el);
+    }
+
+    // --- PASSWORD TOGGLES ---
+    function attachPasswordToggle(inputId, toggleId) {
+      const input = document.getElementById(inputId);
+      const toggle = document.getElementById(toggleId);
+      toggle.addEventListener('click', () => {
+        if (input.type === 'password') {
+          input.type = 'text';
+          toggle.textContent = '🙈';
+        } else {
+          input.type = 'password';
+          toggle.textContent = '👁️';
+        }
+      });
+    }
+    attachPasswordToggle('login-password', 'loginPasswordToggle');
+    attachPasswordToggle('signup-password', 'signupPasswordToggle');
+
+    // --- FORM TOGGLE (preserved behavior) ---
+    function toggleForm() {
+      const loginForm = document.getElementById('loginForm');
+      const signupForm = document.getElementById('signupForm');
+      const msg = document.getElementById('message');
+
+      loginForm.style.display = loginForm.style.display === 'none' ? 'block' : 'none';
+      signupForm.style.display = signupForm.style.display === 'none' ? 'block' : 'none';
+
+      msg.className = 'message';
+      msg.textContent = '';
+      msg.style.display = 'none';
+    }
+
+    function showMessage(text, type) {
+      const msg = document.getElementById('message');
+      msg.className = 'message ' + type;
+      msg.textContent = text;
+      msg.style.display = 'block';
+
+      // shake container on error to match admin feel
+      if (type === 'error') {
+        const c = document.querySelector('.container');
+        c.style.animation = 'shake 0.5s';
+        setTimeout(() => (c.style.animation = ''), 500);
+      }
+    }
+
+    // --- LOGIN ---
+    document.getElementById('loginForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+
+      const res = await fetch('/api/user/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        showMessage('✅ Login successful!', 'success');
+        setTimeout(() => { location.href = data.redirect; }, 1000);
+      } else {
+        showMessage('❌ ' + (data.error || 'Login failed'), 'error');
+      }
+    };
+
+    // --- SIGNUP ---
+    document.getElementById('signupForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('signup-name').value;
+      const email = document.getElementById('signup-email').value;
+      const password = document.getElementById('signup-password').value;
+      const mobile = document.getElementById('signup-mobile').value;
+
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password, mobile }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        showMessage('✅ Signup successful! Now login.', 'success');
+        setTimeout(() => toggleForm(), 1500);
+      } else {
+        showMessage('❌ ' + (data.error || 'Signup failed'), 'error');
+      }
+    };
+  </script>
+</body>
+</html>

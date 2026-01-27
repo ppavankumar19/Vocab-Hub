@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login - DailyWord</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    
+    body{
+      font-family:'Georgia', 'Times New Roman', serif;
+      background:linear-gradient(-45deg,#2c3e50,#4a235a,#154360);
+      background-size:400% 400%;
+      animation:globalBG 15s ease infinite;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+    }
+
+    @keyframes globalBG{
+      0%{background-position:0% 50%;}
+      50%{background-position:100% 50%;}
+      100%{background-position:0% 50%;}
+    }
+
+    /* Floating Letters Background */
+    .floating-letters {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: -1;
+    }
+    
+    .letter {
+      position: absolute;
+      font-size: 18px;
+      font-weight: bold;
+      color: rgba(255, 255, 255, 0.1);
+      font-family: 'Georgia', serif;
+      opacity: 0;
+      animation: floatLetter 12s linear infinite, fadeLetter 5s ease-in-out infinite;
+    }
+
+    @keyframes floatLetter {
+      0% { transform: translateY(-120vh) rotate(0deg); }
+      100% { transform: translateY(120vh) rotate(360deg); }
+    }
+    @keyframes fadeLetter {
+      0%, 100% { opacity: 0; }
+      50% { opacity: 0.8; }
+    }
+
+    /* Main Container */
+    .container{
+      background:linear-gradient(45deg,#fff5e6,#fff);
+      width:100%;
+      max-width:420px;
+      padding:2.5rem 2rem;
+      border-radius:12px;
+      border:2px solid #d4a76a;
+      box-shadow:0 30px 50px rgba(0,0,0,.25),
+                  inset 0 0 0 1px #d4a76a,
+                  inset 0 0 30px rgba(139,69,19,.1);
+      position:relative;
+      z-index:1;
+      animation:bookOpen 1.2s cubic-bezier(.23,1,.32,1) forwards;
+    }
+    
+    @keyframes bookOpen{
+      0% { transform: scale(0.8) rotateX(-15deg) translateY(50px); opacity: 0; filter: blur(5px); }
+      100% { transform: scale(1) rotateX(0deg) translateY(0); opacity: 1; filter: blur(0); }
+    }
+
+    /* Page Curl Effect */
+    .container::before{
+      content:"";
+      position:absolute;top:0;right:0;
+      width:45px;height:45px;
+      background:linear-gradient(225deg,transparent 50%,rgba(212,167,106,.3) 50%);
+      border-radius:0 12px 0 8px;
+      animation:pageCurl 2s ease-in-out infinite alternate;
+    }
+    @keyframes pageCurl{0%{transform:rotate(0deg)}100%{transform:rotate(-3deg)}}
+
+    /* Icon */
+    .lock-icon{
+      text-align:center;
+      font-size:3.5rem;
+      margin-bottom:1rem;
+      animation: bookFloat 3s ease-in-out infinite alternate;
+      filter: drop-shadow(0 5px 15px rgba(139, 69, 19, 0.3));
+    }
+    @keyframes bookFloat {
+      0% { transform: translateY(0) rotate(0deg); }
+      100% { transform: translateY(-10px) rotate(2deg); }
+    }
+
+    /* Title */
+    h1{
+      text-align:center;
+      font-size:2.2rem;
+      margin-bottom:0.5rem;
+      color:#8b4513;
+      font-weight:900;
+      letter-spacing:1px;
+      text-shadow:2px 2px 0 rgba(139,69,19,.1);
+      background:linear-gradient(45deg,#8b4513,#a0522d,#d2691e);
+      background-size:200% 200%;
+      -webkit-background-clip:text;
+      background-clip:text;
+      -webkit-text-fill-color:transparent;
+      animation:titleGlow 3s ease-in-out infinite alternate;
+    }
+    @keyframes titleGlow{
+      0%{filter:drop-shadow(0 0 6px rgba(139,69,19,.5));background-position:0% 50%;}
+      100%{filter:drop-shadow(0 0 14px rgba(139,69,19,.8));background-position:100% 50%;}
+    }
+
+    /* Subtitle */
+    .subtitle{
+      text-align:center;
+      color:#5d4037;
+      margin-bottom:2rem;
+      font-size:1rem;
+      font-style:italic;
+      opacity:0;
+      transform:translateY(10px);
+      animation:fadeIn 1.2s ease-out 0.5s forwards;
+      padding-bottom:12px;
+      position:relative;
+    }
+    @keyframes fadeIn{to{opacity:1;transform:translateY(0)}}
+    .subtitle::after{
+      content:"";
+      position:absolute;bottom:0;left:25%;
+      width:50%;height:1px;
+      background:linear-gradient(90deg,transparent,#8b4513,transparent);
+      animation:lineGrow 2s ease-out;
+    }
+    @keyframes lineGrow{
+      from{width:0;left:50%}
+      to{width:50%;left:25%}
+    }
+
+    /* Form */
+    form{
+      animation:formSlide 1s ease-out 0.8s forwards;
+      opacity:0;
+      transform:translateX(-15px);
+    }
+    @keyframes formSlide{to{opacity:1;transform:translateX(0)}}
+
+    /* Email Input */
+    #email{
+      width:100%;
+      padding:14px 16px;
+      margin:12px 0 8px;
+      border:2px solid transparent;
+      border-radius:8px;
+      background:linear-gradient(#faf3e5,#fff);
+      font-family:'Georgia',serif;
+      font-size:1rem;
+      color:#3e342c;
+      transition:all .3s ease;
+      box-shadow:inset 0 2px 8px rgba(0,0,0,.08);
+    }
+    #email:focus{
+      outline:none;
+      border-color:#8b4513;
+      background:linear-gradient(#fff,#faf3e5);
+      box-shadow:inset 0 2px 15px rgba(139,69,19,.15);
+      transform:translateY(-3px);
+    }
+    #email::placeholder{
+      color:#8b6b4b;
+      font-style:italic;
+    }
+
+    /* Password Input with Toggle */
+    .password-wrapper{
+      position:relative;
+      margin-bottom: 15px;
+    }
+    #password{
+      width:100%;
+      padding:14px 16px;
+      margin:0; /* Remove default margin */
+      border:2px solid transparent;
+      border-radius:8px;
+      background:linear-gradient(#faf3e5,#fff);
+      font-family:'Georgia',serif;
+      font-size:1rem;
+      color:#3e342c;
+      transition:all .3s ease;
+      box-shadow:inset 0 2px 8px rgba(0,0,0,.08);
+      padding-right:45px; /* Space for toggle */
+    }
+    #password:focus{
+      outline:none;
+      border-color:#8b4513;
+      background:linear-gradient(#fff,#faf3e5);
+      box-shadow:inset 0 2px 15px rgba(139,69,19,.15);
+      transform:translateY(-3px);
+    }
+    #password::placeholder{
+      color:#8b6b4b;
+      font-style:italic;
+    }
+    .password-toggle{
+      position:absolute;
+      right:15px;
+      top:50%;
+      transform:translateY(-50%);
+      cursor:pointer;
+      color:#8b4513;
+      font-size:1.2rem;
+      transition:color .2s;
+      padding:5px;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+    .password-toggle:hover{
+      color:#d2691e;
+    }
+
+    /* Button */
+    .btn{
+      width:100%;
+      padding:14px;
+      border:none;
+      border-radius:6px;
+      background:linear-gradient(45deg,#8b4513,#a0522d,#d2691e);
+      color:#fff;
+      font-weight:600;
+      font-size:1.1rem;
+      cursor:pointer;
+      position:relative;
+      overflow:hidden;
+      box-shadow:0 6px 12px rgba(139,69,19,.4);
+      transition:transform .2s,box-shadow .2s;
+      margin-top: 15px;
+    }
+    .btn:hover{
+      transform:translateY(-3px);
+      box-shadow:0 10px 20px rgba(139,69,19,.6);
+      background:linear-gradient(45deg,#a0522d,#d2691e,#8b4513);
+    }
+    .btn::before{
+      content:"";
+      position:absolute;top:0;left:-110%;width:55%;
+      height:100%;
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);
+      transition:left .7s ease;
+    }
+    .btn:hover::before{left:110%;}
+
+    /* Error */
+    .error{
+      color:#b71c1c;
+      background:rgba(183,28,28,.15);
+      border-left:4px solid #b71c1c;
+      padding:12px;
+      border-radius:0 4px 4px 0;
+      margin-top:10px;
+      display:none;
+      animation:shake .4s cubic-bezier(.36,.07,.19,.97) both;
+      font-size: .9rem;
+    }
+    @keyframes shake{
+      10%,90%{transform:translateX(-2px)}
+      20%,80%{transform:translateX(2px)}
+      30%,50%,70%{transform:translateX(-4px)}
+      40%,60%{transform:translateX(4px)}
+    }
+
+    /* Demo Box */
+    .demo{
+      background:#fff8e1;
+      border:2px solid #ffb74d;
+      padding:16px;
+      border-radius:8px;
+      margin-top:2rem;
+      opacity:0;
+      transform:translateX(15px);
+      animation:fadeDemo 1s ease-out 0.8s forwards;
+      position: relative;
+    }
+    @keyframes fadeDemo{to{opacity:1;transform:translateX(0)}}
+    .demo::before{
+      content:"REFERENCE";
+      position:absolute;top:12px;right:-30px;
+      background:#ff9800;color:#fff;
+      padding:4px 12px;border-radius:4px;
+      font-size:.8rem;font-weight:bold;
+      transform: rotate(45deg);
+    }
+    .demo-title{
+      font-weight:600;
+      color:#e65100;
+      margin-bottom:.8rem;
+      display:flex;align-items:center;
+    }
+    .demo-title::before{
+      content:"📘";
+      margin-right:8px;
+      animation:bookFlip 2s infinite;
+    }
+    @keyframes bookFlip{0%,100%{transform:rotateY(0)}50%{transform:rotateY(180deg)}}
+    .demo-cred{
+      color:#3e342c;
+      font-family:'Courier New',monospace;
+      background:rgba(255,255,255,.6);
+      padding:6px 10px;
+      border-radius:4px;
+      margin:.5rem 0;
+      transition:transform .3s;
+    }
+    .demo-cred:hover{transform:translateX(6px)}
+
+    /* Footer */
+    .footer{
+      text-align:center;
+      margin-top:2rem;
+      font-size:.9rem;
+      color:#5d4037;
+      opacity:0;
+      animation:footerFade 1.2s ease-out 1s forwards;
+    }
+    @keyframes footerFade{to{opacity:1}}
+    .footer a{
+      color:#8b4513;
+      text-decoration:none;
+      margin:0 6px;
+      position:relative;
+      padding-bottom:2px;
+      transition:all .2s;
+    }
+    .footer a:hover{
+      color:#d2691e;
+      border-bottom:2px dotted #d2691e;
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width:480px){
+      .container{padding:1.8rem 1.5rem;}
+      h1{font-size:1.7rem;}
+      .subtitle{font-size:.92rem;}
+      .btn{font-size:.92rem;}
+      .password-toggle{font-size:1.1rem; right:10px;}
+      .password-wrapper input{padding-right:40px;}
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Floating Letters Background -->
+  <div class="floating-letters" id="floatingLetters"></div>
+
+  <div class="container">
+    <div class="lock-icon">🔐</div>
+    <h1>Admin Login</h1>
+    <p class="subtitle">Access administrator dashboard</p>
+
+    <form id="loginForm">
+      <input type="email" id="email" placeholder="Admin Email" value="admin@dailyword.com" required>
+      
+      <div class="password-wrapper">
+        <input type="password" id="password" placeholder="Password" required>
+        <span class="password-toggle" id="passwordToggle">👁️</span>
+      </div>
+
+      <div id="error" class="error"></div>
+      <button type="submit" class="btn">Login to Admin</button>
+    </form>
+
+    <div class="demo">
+      <div class="demo-title">📌 Demo Admin Credentials:</div>
+      <div class="demo-cred">📧 admin@dailyword.com</div>
+      <div class="demo-cred">🔑 admin123</div>
+    </div>
+
+    <div class="footer">
+      User account? <a onclick="location.href='/user-login'">User Login →</a> | <a onclick="location.href='/'">Home</a>
+    </div>
+  </div>
+
+  <script>
+    // --- BACKGROUND ANIMATION ---
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+    const flContainer = document.getElementById('floatingLetters');
+    function getRandomDelay(max) { return Math.random() * max; }
+    for(let i=0;i<25;i++){
+      const el = document.createElement('div');
+      el.className = 'letter';
+      el.textContent = letters[Math.floor(Math.random() * letters.length)];
+      el.style.left = `${Math.random() * 100}%`;
+      el.style.top = `${Math.random() * 100}%`;
+      el.style.animationDelay = `${getRandomDelay(5)}s`;
+      flContainer.appendChild(el);
+    }
+
+    // --- PASSWORD TOGGLE ---
+    const passwordInput = document.getElementById('password');
+    const passwordToggle = document.getElementById('passwordToggle');
+    passwordToggle.addEventListener('click', () => {
+      if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        passwordToggle.textContent = '🙈';
+      } else {
+        passwordInput.type = 'password';
+        passwordToggle.textContent = '👁️';
+      }
+    });
+
+    // --- ORIGINAL LOGIN LOGIC (PRESERVED) ---
+    document.getElementById('loginForm').onsubmit = async e => {
+      e.preventDefault();
+      const errorEl = document.getElementById('error');
+      errorEl.style.display = 'none';
+      errorEl.textContent = '';
+
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      console.log('Attempting admin login:', email);
+
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await res.json();
+      console.log('Response:', data);
+      
+      if (!res.ok) {
+        errorEl.style.display = 'block';
+        errorEl.textContent = '❌ ' + (data.error || 'Login failed');
+        // Add shake animation on error
+        document.querySelector('.container').style.animation = 'shake 0.5s';
+        setTimeout(() => { document.querySelector('.container').style.animation = ''; }, 500);
+        return;
+      }
+
+      if (data.redirect) {
+        window.location.href = data.redirect;
+      }
+    };
+
+    // Add shake animation to stylesheet
+    const style = document.createElement('style');
+    style.textContent = `@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}`;
+    document.head.appendChild(style);
+  </script>
+</body>
+</html>
+
+
+
+

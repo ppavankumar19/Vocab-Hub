@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DailyWord - Community Dictionary</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+
+    body{
+      font-family:'Georgia','Times New Roman',serif;
+      background:linear-gradient(-45deg,#2c3e50,#4a235a,#154360);
+      background-size:400% 400%;
+      animation:globalBG 15s ease infinite;
+      min-height:100vh;
+      color:#3e342c;
+      overflow-x:hidden;
+    }
+
+    @keyframes globalBG{
+      0%{background-position:0% 50%;}
+      50%{background-position:100% 50%;}
+      100%{background-position:0% 50%;}
+    }
+
+    /* Floating Letters Background */
+    .floating-letters{
+      position:fixed;
+      inset:0;
+      width:100%;
+      height:100%;
+      pointer-events:none;
+      z-index:-2;
+    }
+    .letter{
+      position:absolute;
+      font-size:18px;
+      font-weight:bold;
+      color:rgba(255,255,255,0.10);
+      font-family:'Georgia',serif;
+      opacity:0;
+      animation: floatLetter 12s linear infinite, fadeLetter 5s ease-in-out infinite;
+    }
+    @keyframes floatLetter{
+      0%{transform:translateY(-120vh) rotate(0deg);}
+      100%{transform:translateY(120vh) rotate(360deg);}
+    }
+    @keyframes fadeLetter{
+      0%,100%{opacity:0;}
+      50%{opacity:.8;}
+    }
+
+    /* UPDATED HEADER - More Prominent Logo & Better Spacing */
+    .header{
+      position:sticky;
+      top:0;
+      z-index:100;
+      padding:1rem 2rem;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      background:linear-gradient(45deg, rgba(255,245,230,.14), rgba(255,255,255,.08));
+      border-bottom:2px solid rgba(212,167,106,.35);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow:0 16px 40px rgba(0,0,0,.28);
+      gap:1.5rem;
+    }
+
+    /* Logo Container - Left Side with Breathing Space */
+    .logo-container{
+      flex:1;
+      display:flex;
+      align-items:center;
+    }
+
+    /* HIGHLIGHTED LOGO - Main Attraction */
+    .logo{
+      font-size:2rem;
+      font-weight:900;
+      letter-spacing:1px;
+      display:flex;
+      align-items:center;
+      gap:.6rem;
+      position:relative;
+      cursor:default;
+      padding:.5rem .8rem;
+      border-radius:12px;
+      background:linear-gradient(45deg, rgba(255,245,230,.06), rgba(255,255,255,.03));
+      border:1px solid rgba(212,167,106,.2);
+      transition:all .3s;
+    }
+    
+    .logo::before{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      background:linear-gradient(45deg,#8b4513,#d2691e,#8b4513);
+      border-radius:12px;
+      opacity:.15;
+      z-index:-1;
+      filter:blur(8px);
+      animation:logoGlow 3s ease-in-out infinite;
+    }
+    
+    @keyframes logoGlow{
+      0%,100%{opacity:.15;transform:scale(1)}
+      50%{opacity:.25;transform:scale(1.05)}
+    }
+    
+    .logo-icon{
+      font-size:2.2rem;
+      filter:drop-shadow(0 4px 8px rgba(139,69,19,.4));
+      animation:bookFloat 4s ease-in-out infinite;
+    }
+    
+    @keyframes bookFloat{
+      0%,100%{transform:translateY(0) rotate(-2deg)}
+      50%{transform:translateY(-3px) rotate(2deg)}
+    }
+    
+    .logo-text{
+      background:linear-gradient(135deg,#8b4513,#d2691e,#a0522d);
+      background-size:200% 200%;
+      -webkit-background-clip:text;
+      background-clip:text;
+      -webkit-text-fill-color:transparent;
+      filter:drop-shadow(0 2px 4px rgba(0,0,0,.2));
+      animation:logoShine 4s ease-in-out infinite;
+    }
+    
+    @keyframes logoShine{
+      0%,100%{background-position:0% 50%}
+      50%{background-position:100% 50%}
+    }
+    
+    .logo:hover{
+      transform:translateY(-2px);
+      background:linear-gradient(45deg, rgba(255,245,230,.1), rgba(255,255,255,.06));
+      box-shadow:0 8px 20px rgba(139,69,19,.2);
+    }
+
+    /* Timer - Center */
+    .header-center{
+      flex:1;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+    }
+
+    .timer-badge{
+      background:linear-gradient(45deg,#8b4513,#a0522d,#d2691e);
+      color:white;
+      padding:14px 28px;
+      border-radius:999px;
+      font-weight:900;
+      font-size:1.2rem;
+      font-family:'Georgia',monospace;
+      display:flex;
+      align-items:center;
+      gap:.6rem;
+      box-shadow:0 12px 24px rgba(139,69,19,.4);
+      min-width:180px;
+      justify-content:center;
+      border:1px solid rgba(255,255,255,.3);
+      position:relative;
+      overflow:hidden;
+      transition:all .3s;
+    }
+    .timer-badge::before{
+      content:"";
+      position:absolute; top:0; left:-120%;
+      width:55%; height:100%;
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);
+      transition:left .7s ease;
+    }
+    .timer-badge:hover::before{left:120%}
+    .timer-badge:hover{
+      transform:scale(1.05);
+      box-shadow:0 16px 32px rgba(139,69,19,.5);
+    }
+
+    .timer-badge.warning{
+      background:linear-gradient(45deg,#b71c1c,#d32f2f);
+      animation:pulse .8s infinite;
+    }
+
+    @keyframes pulse{
+      0%,100%{transform:scale(1);box-shadow:0 12px 24px rgba(183,28,28,.4)}
+      50%{transform:scale(1.08);box-shadow:0 16px 32px rgba(183,28,28,.5)}
+    }
+
+    .timer-icon{
+      font-size:1.3rem;
+      animation:spin 2s linear infinite;
+    }
+
+    @keyframes spin{
+      from{transform:rotate(0deg)}
+      to{transform:rotate(360deg)}
+    }
+
+    /* Buttons - Right Side with Breathing Space */
+    .buttons{
+      flex:1;
+      display:flex;
+      justify-content:flex-end;
+      gap:1rem;
+    }
+
+    .btn{
+      padding:12px 24px;
+      border-radius:999px;
+      border:none;
+      cursor:pointer;
+      font-weight:900;
+      font-size:1rem;
+      transition:all .3s;
+      display:inline-flex;
+      align-items:center;
+      gap:.5rem;
+      position:relative;
+      overflow:hidden;
+      font-family:'Georgia',serif;
+      box-shadow:0 12px 24px rgba(0,0,0,.18);
+    }
+
+    .btn-signup{
+      background:linear-gradient(45deg,#8b4513,#a0522d,#d2691e);
+      color:white;
+      border:1px solid rgba(255,255,255,.3);
+    }
+    .btn-signup:hover{
+      transform:translateY(-3px);
+      filter:brightness(1.05);
+      box-shadow:0 16px 32px rgba(139,69,19,.5);
+    }
+
+    .btn-login{
+      background:linear-gradient(45deg,#fff,#fff5e6);
+      color:#5d4037;
+      border:2px solid rgba(212,167,106,.8);
+    }
+    .btn-login:hover{
+      background:linear-gradient(45deg,#8b4513,#a0522d);
+      color:white;
+      transform:translateY(-3px);
+      box-shadow:0 16px 32px rgba(139,69,19,.5);
+      border-color:transparent;
+    }
+
+    /* Main container */
+    .wrapper{
+      max-width:1100px;
+      margin:0 auto;
+      padding:0 1rem;
+    }
+
+    .intro{
+      background:linear-gradient(45deg,#fff5e6,#fff);
+      padding:2.5rem;
+      border-radius:16px;
+      text-align:center;
+      margin:2rem auto;
+      box-shadow:0 28px 56px rgba(0,0,0,.22),
+                 inset 0 0 0 1px rgba(212,167,106,.6),
+                 inset 0 0 35px rgba(139,69,19,.12);
+      border:2px solid #d4a76a;
+      position:relative;
+      overflow:hidden;
+      animation:bookOpen .6s cubic-bezier(.23,1,.32,1) forwards;
+    }
+    .intro::before{
+      content:"";
+      position:absolute; top:0; right:0;
+      width:50px;height:50px;
+      background:linear-gradient(225deg,transparent 50%,rgba(212,167,106,.3) 50%);
+      border-radius:0 16px 0 12px;
+    }
+
+    .intro h2{
+      font-size:2.4rem;
+      margin-bottom:1rem;
+      font-weight:900;
+      letter-spacing:.5px;
+      background:linear-gradient(45deg,#8b4513,#a0522d,#d2691e);
+      -webkit-background-clip:text;
+      background-clip:text;
+      -webkit-text-fill-color:transparent;
+      filter:drop-shadow(0 2px 4px rgba(0,0,0,.1));
+    }
+
+    .intro p{
+      color:#5d4037;
+      font-size:1.1rem;
+      margin-bottom:1.2rem;
+      line-height:1.7;
+    }
+
+    .stat-row{
+      display:flex;
+      justify-content:center;
+      gap:3rem;
+      margin-top:1.8rem;
+      flex-wrap:wrap;
+    }
+
+    .stat{
+      text-align:center;
+    }
+
+    .stat-num{
+      font-size:2.2rem;
+      font-weight:900;
+      background:linear-gradient(45deg,#8b4513,#d2691e);
+      -webkit-background-clip:text;
+      background-clip:text;
+      -webkit-text-fill-color:transparent;
+      filter:drop-shadow(0 2px 4px rgba(0,0,0,.1));
+    }
+
+    .stat-label{
+      color:#6d4c41;
+      font-size:.95rem;
+      margin-top:.5rem;
+      font-weight:700;
+    }
+
+    /* Words grid */
+    .words-container{
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
+      gap:1.5rem;
+      margin:2.5rem 0;
+      transition:filter .3s ease;
+    }
+
+    .words-container.blurred{
+      filter:blur(8px);
+      pointer-events:none;
+    }
+
+    .word-card{
+      background:linear-gradient(45deg,#fff5e6,#fff);
+      border-radius:14px;
+      padding:1.5rem;
+      box-shadow:0 20px 40px rgba(0,0,0,.16),
+                 inset 0 0 0 1px rgba(255,255,255,.4);
+      transition:all .3s;
+      animation:fadeInUp .6s ease;
+      border:2px solid rgba(212,167,106,.8);
+      position:relative;
+      overflow:hidden;
+    }
+    .word-card::before{
+      content:"";
+      position:absolute;
+      top:0; right:0;
+      width:46px;height:46px;
+      background:linear-gradient(225deg,transparent 50%,rgba(212,167,106,.3) 50%);
+      border-radius:0 14px 0 10px;
+    }
+    .word-card:hover{
+      transform:translateY(-8px);
+      box-shadow:0 30px 60px rgba(0,0,0,.2);
+    }
+
+    .word-badge{
+      display:inline-block;
+      background:linear-gradient(45deg,#8b4513,#a0522d);
+      color:white;
+      padding:5px 14px;
+      border-radius:999px;
+      font-size:.85rem;
+      margin-bottom:.6rem;
+      font-weight:900;
+      border:1px solid rgba(255,255,255,.3);
+      box-shadow:0 10px 20px rgba(0,0,0,.15);
+    }
+
+    .word-title{
+      font-size:1.7rem;
+      font-weight:900;
+      margin:.5rem 0 1rem 0;
+      background:linear-gradient(45deg,#8b4513,#a0522d,#d2691e);
+      -webkit-background-clip:text;
+      background-clip:text;
+      -webkit-text-fill-color:transparent;
+    }
+
+    .word-meaning{
+      color:#3e342c;
+      line-height:1.7;
+      margin:1rem 0;
+      padding:.85rem;
+      background:rgba(255,248,225,.7);
+      border-radius:10px;
+      border-left:3px solid #8b4513;
+      border:1px solid rgba(212,167,106,.6);
+    }
+
+    .word-sentence{
+      color:#5d4037;
+      font-style:italic;
+      margin:1rem 0;
+      padding:1rem;
+      background:rgba(255,253,237,.8);
+      border-radius:10px;
+      border-left:3px solid #d2691e;
+      border:1px solid rgba(210,105,30,.6);
+    }
+
+    .word-telugu{
+      color:#5d4037;
+      font-weight:700;
+      margin:.85rem 0;
+      padding:.85rem;
+      background:rgba(243,232,255,.7);
+      border-radius:10px;
+      border-left:3px solid #a0522d;
+      border:1px solid rgba(160,82,45,.6);
+    }
+
+    .word-author{
+      color:#6d4c41;
+      font-size:.95rem;
+      margin-top:1.1rem;
+      padding-top:1.1rem;
+      border-top:1px solid rgba(212,167,106,.4);
+      font-weight:700;
+    }
+
+    /* Blur overlay */
+    .blur-overlay{
+      position:fixed;
+      top:0; left:0;
+      width:100%; height:100%;
+      background:rgba(0,0,0,.6);
+      backdrop-filter:blur(5px);
+      -webkit-backdrop-filter:blur(5px);
+      display:none;
+      z-index:2000;
+      align-items:center;
+      justify-content:center;
+      animation:fadeIn .3s ease;
+    }
+
+    .blur-overlay.active{
+      display:flex;
+    }
+
+    .blur-content{
+      background:linear-gradient(45deg,#fff5e6,#fff);
+      padding:2.5rem;
+      border-radius:16px;
+      text-align:center;
+      max-width:540px;
+      box-shadow:0 35px 80px rgba(0,0,0,.4),
+                 inset 0 0 0 1px rgba(212,167,106,.6);
+      max-height:90vh;
+      overflow-y:auto;
+      border:2px solid #d4a76a;
+      position:relative;
+      animation:bookOpen .4s cubic-bezier(.23,1,.32,1) forwards;
+    }
+    .blur-content::before{
+      content:"";
+      position:absolute; top:0; right:0;
+      width:50px;height:50px;
+      background:linear-gradient(225deg,transparent 50%,rgba(212,167,106,.3) 50%);
+      border-radius:0 16px 0 12px;
+    }
+
+    .blur-close{
+      position:absolute;
+      top:18px; right:18px;
+      background:rgba(255,255,255,.6);
+      border:1px solid rgba(212,167,106,.7);
+      color:#6d4c41;
+      width:38px;height:38px;
+      border-radius:999px;
+      cursor:pointer;
+      font-size:1.5rem;
+      transition:all .3s;
+      display:grid;
+      place-items:center;
+      box-shadow:0 12px 24px rgba(0,0,0,.15);
+    }
+    .blur-close:hover{
+      transform:translateY(-2px) rotate(90deg);
+      box-shadow:0 16px 32px rgba(0,0,0,.2);
+    }
+
+    .blur-content h2{
+      font-size:2rem;
+      margin-bottom:1.1rem;
+      font-weight:900;
+      color:#8b4513;
+      margin-top:1.2rem;
+    }
+
+    .blur-content p{
+      color:#5d4037;
+      margin-bottom:1.6rem;
+      line-height:1.7;
+      font-size:1.05rem;
+    }
+
+    .countdown{
+      font-size:2.8rem;
+      font-weight:900;
+      color:#b71c1c;
+      margin:1.6rem 0;
+      font-family:'Georgia',monospace;
+      animation:pulse 1s infinite;
+      text-shadow:0 3px 6px rgba(0,0,0,.2);
+    }
+
+    .blur-btn{
+      background:linear-gradient(45deg,#8b4513,#a0522d,#d2691e);
+      color:white;
+      border:none;
+      padding:14px 32px;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:900;
+      margin:.5rem;
+      transition:all .3s;
+      display:inline-block;
+      width:100%;
+      margin-bottom:.85rem;
+      position:relative;
+      overflow:hidden;
+      font-family:'Georgia',serif;
+      box-shadow:0 12px 24px rgba(139,69,19,.4);
+    }
+    .blur-btn:hover{
+      transform:translateY(-3px);
+      filter:brightness(1.05);
+      box-shadow:0 16px 32px rgba(139,69,19,.5);
+    }
+    .blur-btn::before{
+      content:"";
+      position:absolute; top:0; left:-120%;
+      width:55%; height:100%;
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);
+      transition:left .7s ease;
+    }
+    .blur-btn:hover::before{left:120%}
+
+    .blur-guest{
+      background:linear-gradient(45deg,#fff,#fff5e6);
+      color:#5d4037;
+      border:2px solid rgba(212,167,106,.7);
+      box-shadow:0 12px 24px rgba(0,0,0,.12);
+    }
+    .blur-guest:hover{
+      box-shadow:0 16px 32px rgba(0,0,0,.16);
+    }
+
+    @keyframes bookOpen{
+      0% { transform: scale(0.96) translateY(10px); opacity: 0; filter: blur(4px); }
+      100% { transform: scale(1) translateY(0); opacity: 1; filter: blur(0); }
+    }
+
+    @keyframes fadeInUp{
+      from{opacity:0;transform:translateY(25px)}
+      to{opacity:1;transform:translateY(0)}
+    }
+
+    @keyframes fadeIn{
+      from{opacity:0}
+      to{opacity:1}
+    }
+
+    @media (max-width: 768px){
+      .header{
+        flex-direction:column;
+        gap:1rem;
+        padding:1rem;
+      }
+      .logo-container{
+        justify-content:center;
+        order:1;
+      }
+      .logo{
+        font-size:1.5rem;
+        padding:.4rem .6rem;
+      }
+      .logo-icon{
+        font-size:1.7rem;
+      }
+      .header-center{
+        order:3;
+        width:100%;
+      }
+      .buttons{
+        order:2;
+        width:100%;
+        justify-content:center;
+      }
+      .btn{
+        flex:1;
+        justify-content:center;
+        padding:10px 16px;
+        font-size:.92rem;
+      }
+      .timer-badge{
+        min-width:auto;
+        font-size:1.05rem;
+        padding:10px 18px;
+      }
+      .intro{
+        padding:2rem 1.6rem;
+      }
+      .intro h2{
+        font-size:1.8rem;
+      }
+      .words-container{
+        grid-template-columns:1fr;
+      }
+      .stat-row{
+        gap:1.5rem;
+        flex-direction:column;
+      }
+      .blur-content{
+        margin:1rem;
+        padding:2rem 1.6rem;
+        max-width:92%;
+      }
+      .blur-content h2{
+        font-size:1.5rem;
+      }
+      .countdown{
+        font-size:2.2rem;
+      }
+      .blur-btn{
+        width:100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- UI-only addition: floating letters background -->
+  <div class="floating-letters" id="floatingLetters"></div>
+
+  <!-- UPDATED HEADER with Highlighted Logo -->
+  <div class="header">
+    <div class="logo-container">
+      <div class="logo">
+        <span class="logo-icon">📚</span>
+        <span class="logo-text">VOCABHUB</span>
+      </div>
+    </div>
+    
+    <div class="header-center">
+      <div class="timer-badge" id="timer-badge">
+        <span class="timer-icon">⏱️</span>
+        <span id="timer-countdown">10:00</span>
+      </div>
+    </div>
+    
+    <div class="buttons">
+      <button class="btn btn-signup" onclick="location.href='/user-login'">📝 Sign Up</button>
+      <button class="btn btn-login" onclick="location.href='/user-login'">👤 Login</button>
+    </div>
+  </div>
+
+  <div class="wrapper">
+    <div class="intro">
+      <h2>📖 One Word a Day</h2>
+      <p>A Better Vocabulary for Life - Explore our community dictionary</p>
+      <div class="stat-row">
+        <div class="stat">
+          <div class="stat-num" id="word-count">0</div>
+          <div class="stat-label">Words</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num" id="user-count">0</div>
+          <div class="stat-label">Contributors</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="words-container" id="words-grid"></div>
+  </div>
+
+  <div class="blur-overlay" id="blur-overlay">
+    <div class="blur-content">
+      <button class="blur-close" onclick="location.href='/'">✕</button>
+      <h2>⏱️ Session Expired</h2>
+      <p>Your guest browsing session has expired after 10 minutes. Create a free account to continue exploring and contribute your own words!</p>
+      <div class="countdown" id="final-countdown">00:00</div>
+      <button class="blur-btn" onclick="location.href='/user-login'">📝 Create Account</button>
+      <button class="blur-btn" onclick="location.href='/user-login'">👤 Login</button>
+      <button class="blur-btn blur-guest" onclick="resetGuestTimer()">🔄 Continue Browsing (10 min)</button>
+    </div>
+  </div>
+
+  <script>
+    // UI-only: floating letters (no feature/structure changes)
+    (function () {
+      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+      const flContainer = document.getElementById('floatingLetters');
+      if (!flContainer) return;
+      for (let i = 0; i < 25; i++) {
+        const el = document.createElement('div');
+        el.className = 'letter';
+        el.textContent = letters[Math.floor(Math.random() * letters.length)];
+        el.style.left = `${Math.random() * 100}%`;
+        el.style.top = `${Math.random() * 100}%`;
+        el.style.animationDelay = `${Math.random() * 5}s`;
+        flContainer.appendChild(el);
+      }
+    })();
+
+    const GUEST_TIMEOUT = 10 * 60 * 1000;
+    const WARNING_TIME = 1 * 60 * 1000;
+    let sessionStartTime = null;
+    let timerInterval = null;
+    let countdownInterval = null;
+    let isSessionExpired = false;
+
+    function initSession() {
+      const savedTime = parseInt(localStorage.getItem('guest_session_start') || '0');
+      const now = Date.now();
+      
+      if (savedTime && (now - savedTime) < GUEST_TIMEOUT) {
+        sessionStartTime = savedTime;
+      } else {
+        sessionStartTime = now;
+        localStorage.setItem('guest_session_start', sessionStartTime.toString());
+      }
+      console.log('✅ Session started:', new Date(sessionStartTime).toLocaleTimeString());
+    }
+
+    function formatTime(ms) {
+      const totalSeconds = Math.floor(ms / 1000);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    function updateTimerDisplay() {
+      const elapsed = Date.now() - sessionStartTime;
+      const remaining = Math.max(0, GUEST_TIMEOUT - elapsed);
+      
+      const timerBadge = document.getElementById('timer-badge');
+      const timerCountdown = document.getElementById('timer-countdown');
+      
+      timerCountdown.textContent = formatTime(remaining);
+      
+      if (remaining <= WARNING_TIME) {
+        timerBadge.classList.add('warning');
+      } else {
+        timerBadge.classList.remove('warning');
+      }
+      
+      if (remaining <= 0 && !isSessionExpired) {
+        isSessionExpired = true;
+        showSessionExpired();
+        clearInterval(timerInterval);
+      }
+    }
+
+    function showSessionExpired() {
+      const blurOverlay = document.getElementById('blur-overlay');
+      const wordsContainer = document.getElementById('words-grid');
+      
+      blurOverlay.classList.add('active');
+      wordsContainer.classList.add('blurred');
+      
+      let countdown = 30;
+      const finalCountdown = document.getElementById('final-countdown');
+      finalCountdown.textContent = formatTime(countdown * 1000);
+      
+      countdownInterval = setInterval(() => {
+        countdown--;
+        finalCountdown.textContent = formatTime(countdown * 1000);
+        
+        if (countdown <= 0) {
+          clearInterval(countdownInterval);
+          location.href = '/user-login';
+        }
+      }, 1000);
+    }
+
+    function resetGuestTimer() {
+      localStorage.setItem('guest_session_start', Date.now().toString());
+      isSessionExpired = false;
+      
+      const blurOverlay = document.getElementById('blur-overlay');
+      const wordsContainer = document.getElementById('words-grid');
+      
+      blurOverlay.classList.remove('active');
+      wordsContainer.classList.remove('blurred');
+      
+      if (countdownInterval) clearInterval(countdownInterval);
+      
+      console.log('🔄 Timer reset!');
+      startTimers();
+    }
+
+    function startTimers() {
+      timerInterval = setInterval(updateTimerDisplay, 100);
+      updateTimerDisplay();
+    }
+
+    function loadWords() {
+      fetch('/api/words')
+        .then(r => r.json())
+        .then(words => {
+          const grid = document.getElementById('words-grid');
+          document.getElementById('word-count').textContent = words.length;
+
+          if (words.length === 0) {
+            grid.innerHTML = '<p style="text-align:center;color:#6d4c41;grid-column:1/-1;font-size:1.1rem">📚 No words yet. Be the first to contribute!</p>';
+            return;
+          }
+
+          grid.innerHTML = words.map((w, i) => `
+            <div class="word-card" style="animation-delay: ${i * 0.1}s">
+              <div class="word-badge">📖 Dictionary</div>
+              <div class="word-title">${w.word}</div>
+              <div class="word-meaning"><strong>Meaning:</strong><br>${w.meaning}</div>
+              <div class="word-sentence"><strong>✏️ Sentence:</strong><br>"${w.sentence}"</div>
+              ${w.telugu_meaning ? `<div class="word-telugu"><strong>🇹🇪 Telugu:</strong> ${w.telugu_meaning}</div>` : ''}
+              <div class="word-author">— <strong>${w.author}</strong></div>
+            </div>
+          `).join('');
+        })
+        .catch(err => console.error('Error loading words:', err));
+    }
+
+    function loadStats() {
+      fetch('/api/words')
+        .then(r => r.json())
+        .then(words => {
+          const uniqueAuthors = new Set(words.map(w => w.author));
+          document.getElementById('user-count').textContent = uniqueAuthors.size;
+        });
+    }
+
+    function trackVisitor() {
+      const sessionId = 'guest_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem('session_id', sessionId);
+      
+      fetch('/api/track-visitor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId,
+          pageAccessed: 'index',
+          isGuest: true
+        })
+      }).then(r => r.json())
+        .then(data => {
+          console.log('✅ Visitor tracked:', data);
+        })
+        .catch(err => console.error('❌ Track error:', err));
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      console.log('📖 DailyWord Loading...');
+      initSession();
+      startTimers();
+      loadWords();
+      loadStats();
+      trackVisitor();
+    });
+
+    window.addEventListener('beforeunload', () => {
+      if (timerInterval) clearInterval(timerInterval);
+      if (countdownInterval) clearInterval(countdownInterval);
+    });
+  </script>
+</body>
+</html>

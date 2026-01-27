@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Dashboard - VocabHub</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+
+    body{
+      font-family:'Georgia','Times New Roman',serif;
+      background:linear-gradient(-45deg,#2c3e50,#4a235a,#154360);
+      background-size:400% 400%;
+      animation:globalBG 15s ease infinite;
+      min-height:100vh;
+      color:#3e342c;
+      overflow-x:hidden;
+    }
+
+    @keyframes globalBG{
+      0%{background-position:0% 50%;}
+      50%{background-position:100% 50%;}
+      100%{background-position:0% 50%;}
+    }
+
+    .floating-letters{
+      position:fixed;
+      inset:0;
+      width:100%;
+      height:100%;
+      pointer-events:none;
+      z-index:-2;
+    }
+    .letter{
+      position:absolute;
+      font-size:18px;
+      font-weight:bold;
+      color:rgba(255,255,255,0.10);
+      font-family:'Georgia',serif;
+      opacity:0;
+      animation: floatLetter 12s linear infinite, fadeLetter 5s ease-in-out infinite;
+    }
+    @keyframes floatLetter{
+      0%{transform:translateY(-120vh) rotate(0deg);}
+      100%{transform:translateY(120vh) rotate(360deg);}
+    }
+    @keyframes fadeLetter{
+      0%,100%{opacity:0;}
+      50%{opacity:.8;}
+    }
+
+    .header{
+      position:sticky;
+      top:0;
+      z-index:5;
+      color:#fff;
+      padding:1.4rem 1.25rem;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      background:linear-gradient(45deg, rgba(255,245,230,.10), rgba(255,255,255,.06));
+      border-bottom:1px solid rgba(212,167,106,.25);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow:0 12px 30px rgba(0,0,0,.25);
+    }
+
+    .header h1{
+      font-size:1.8rem;
+      flex:1;
+      font-weight:900;
+      letter-spacing:.6px;
+      text-shadow:0 8px 18px rgba(0,0,0,.25);
+    }
+
+    .user-info{
+      background:rgba(255,255,255,0.12);
+      padding:0.55rem 1rem;
+      border-radius:999px;
+      margin-right:.5rem;
+      font-size:0.95rem;
+      border:1px solid rgba(212,167,106,.25);
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);
+      white-space:nowrap;
+      max-width:45vw;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .logout-btn{
+      background:linear-gradient(45deg, rgba(139,69,19,.85), rgba(210,105,30,.85));
+      border:1px solid rgba(255,255,255,.25);
+      color:#fff;
+      padding:10px 18px;
+      border-radius:999px;
+      cursor:pointer;
+      font-weight:800;
+      transition:transform .2s, box-shadow .2s, filter .2s;
+      box-shadow:0 8px 18px rgba(0,0,0,.25);
+    }
+    .logout-btn:hover{
+      transform:translateY(-2px);
+      filter:brightness(1.05);
+      box-shadow:0 12px 26px rgba(0,0,0,.35);
+    }
+
+    .container{
+      max-width:1200px;
+      margin:1.6rem auto 3rem;
+      padding:0 1rem;
+    }
+
+    .container::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      z-index:-1;
+      background:radial-gradient(1200px 600px at 20% 10%, rgba(255,245,230,.16), transparent 60%),
+                 radial-gradient(900px 500px at 85% 30%, rgba(212,167,106,.12), transparent 60%),
+                 radial-gradient(1000px 700px at 50% 100%, rgba(255,255,255,.08), transparent 65%);
+      pointer-events:none;
+    }
+
+    .streak-card{
+      background:linear-gradient(135deg, #ffd700, #ffed4e);
+      padding:1.5rem;
+      border-radius:14px;
+      border:2px solid #ff9800;
+      margin-bottom:1.25rem;
+      box-shadow:0 18px 35px rgba(255,152,0,.35),
+                 inset 0 0 0 1px rgba(255,255,255,.55);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:2rem;
+      flex-wrap:wrap;
+    }
+
+    .streak-info{
+      display:flex;
+      align-items:center;
+      gap:1.5rem;
+    }
+
+    .streak-number{
+      font-size:3.5rem;
+      font-weight:900;
+      color:#d32f2f;
+      text-shadow:0 4px 8px rgba(0,0,0,.15);
+    }
+
+    .streak-text{
+      display:flex;
+      flex-direction:column;
+      gap:0.35rem;
+    }
+
+    .streak-text h3{
+      font-size:1.2rem;
+      color:#ff6f00;
+      font-weight:900;
+      margin:0;
+    }
+
+    .streak-text p{
+      font-size:0.95rem;
+      color:#e65100;
+      margin:0;
+      font-weight:600;
+    }
+
+    .freeze-warning{
+      background:linear-gradient(135deg, #f44336, #e91e63);
+      color:white;
+      padding:1.2rem;
+      border-radius:14px;
+      border:2px solid #c2185b;
+      margin-bottom:1.25rem;
+      display:none;
+      box-shadow:0 18px 35px rgba(244,67,54,.35);
+    }
+
+    .freeze-warning.active{
+      display:block;
+      animation:shake 0.5s ease-in-out;
+    }
+
+    @keyframes shake{
+      0%,100%{transform:translateX(0)}
+      25%{transform:translateX(-8px)}
+      75%{transform:translateX(8px)}
+    }
+
+    .freeze-warning h3{
+      margin:0 0 0.5rem 0;
+      font-size:1.2rem;
+      font-weight:900;
+    }
+
+    .freeze-warning p{
+      margin:0.35rem 0;
+      font-weight:600;
+      font-size:0.95rem;
+    }
+
+    .tabs{
+      display:flex;
+      gap:.75rem;
+      margin:1.25rem 0 1.25rem;
+      flex-wrap:wrap;
+      padding:.75rem;
+      border-radius:14px;
+      background:linear-gradient(45deg,#fff5e6,#fff);
+      border:2px solid #d4a76a;
+      box-shadow:0 18px 35px rgba(0,0,0,.18),
+                 inset 0 0 0 1px rgba(212,167,106,.55),
+                 inset 0 0 26px rgba(139,69,19,.08);
+      position:relative;
+      overflow:hidden;
+    }
+    .tabs::before{
+      content:"";
+      position:absolute;
+      top:-40%;
+      left:-60%;
+      width:60%;
+      height:200%;
+      background:linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
+      transform:rotate(18deg);
+      animation:tabSheen 6s ease-in-out infinite;
+      pointer-events:none;
+    }
+    @keyframes tabSheen{
+      0%{left:-70%}
+      50%{left:110%}
+      100%{left:110%}
+    }
+
+    .tab-btn{
+      background:transparent;
+      border:1px solid transparent;
+      padding:.85rem 1.1rem;
+      cursor:pointer;
+      font-weight:900;
+      font-size:1rem;
+      color:#6d4c41;
+      border-radius:12px;
+      transition:transform .2s, box-shadow .2s, background .2s, color .2s, border-color .2s;
+      position:relative;
+      z-index:1;
+    }
+    .tab-btn:hover{
+      color:#8b4513;
+      transform:translateY(-1px);
+    }
+    .tab-btn.active{
+      color:#fff;
+      background:linear-gradient(45deg,#8b4513,#a0522d,#d2691e);
+      border-color:rgba(255,255,255,.25);
+      box-shadow:0 10px 20px rgba(139,69,19,.35);
+    }
+
+    .tab-content{
+      display:none;
+      background:linear-gradient(45deg,#fff5e6,#fff);
+      padding:2rem;
+      border-radius:14px;
+      border:2px solid #d4a76a;
+      box-shadow:0 24px 45px rgba(0,0,0,.20),
+                 inset 0 0 0 1px rgba(212,167,106,.55),
+                 inset 0 0 30px rgba(139,69,19,.10);
+      position:relative;
+      overflow:hidden;
+      animation:bookOpen 1s cubic-bezier(.23,1,.32,1) forwards;
+    }
+    .tab-content.active{display:block;}
+
+    @keyframes bookOpen{
+      0% { transform: scale(0.98) translateY(8px); opacity: 0; filter: blur(3px); }
+      100% { transform: scale(1) translateY(0); opacity: 1; filter: blur(0); }
+    }
+
+    .section h2{
+      font-size:1.55rem;
+      margin-bottom:1.25rem;
+      font-weight:900;
+      letter-spacing:.3px;
+      color:#8b4513;
+      padding-bottom:.9rem;
+      border-bottom:1px solid rgba(139,69,19,.25);
+      position:relative;
+    }
+    .section h2::after{
+      content:"";
+      position:absolute;
+      left:0; bottom:-1px;
+      width:48%;
+      height:2px;
+      background:linear-gradient(90deg,#8b4513, transparent);
+      opacity:.8;
+    }
+
+    .form-group{margin-bottom:1.1rem;}
+
+    label{
+      display:block;
+      margin-bottom:.55rem;
+      font-weight:900;
+      color:#5d4037;
+    }
+
+    input, textarea, select{
+      width:100%;
+      padding:12px 14px;
+      border:2px solid transparent;
+      border-radius:10px;
+      font-family:'Georgia',serif;
+      font-size:1rem;
+      background:linear-gradient(#faf3e5,#fff);
+      color:#3e342c;
+      box-shadow:inset 0 2px 8px rgba(0,0,0,.08);
+      transition:all .25s ease;
+    }
+    textarea{resize:vertical}
+    input:focus, textarea:focus, select:focus{
+      outline:none;
+      border-color:#8b4513;
+      background:linear-gradient(#fff,#faf3e5);
+      box-shadow:inset 0 2px 15px rgba(139,69,19,.15);
+      transform:translateY(-2px);
+    }
+
+    .btn{
+      background:linear-gradient(45deg,#8b4513,#a0522d,#d2691e);
+      color:white;
+      padding:.75rem 1.25rem;
+      border:none;
+      border-radius:10px;
+      cursor:pointer;
+      font-weight:900;
+      transition:transform .2s, box-shadow .2s, filter .2s;
+      box-shadow:0 10px 20px rgba(139,69,19,.35);
+      position:relative;
+      overflow:hidden;
+      font-family:'Georgia',serif;
+    }
+    .btn:hover{
+      transform:translateY(-2px);
+      filter:brightness(1.03);
+      box-shadow:0 14px 26px rgba(139,69,19,.45);
+    }
+    .btn:disabled{
+      opacity: 0.5;
+      cursor: not-allowed;
+      filter: grayscale(1);
+    }
+    .btn::before{
+      content:"";
+      position:absolute; top:0; left:-120%;
+      width:55%; height:100%;
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,.28),transparent);
+      transition:left .7s ease;
+    }
+    .btn:hover::before{left:120%}
+
+    .btn-secondary{
+      background:linear-gradient(45deg,#eee,#fff);
+      color:#5d4037;
+      border:1px solid rgba(212,167,106,.65);
+      box-shadow:0 10px 18px rgba(0,0,0,.10);
+      margin-left:.5rem;
+    }
+    .btn-secondary:hover{
+      box-shadow:0 14px 26px rgba(0,0,0,.14);
+    }
+
+    .btn-delete{
+      background:linear-gradient(45deg,#b71c1c,#d32f2f);
+      padding:.42rem .75rem;
+      font-size:.85rem;
+      box-shadow:0 10px 18px rgba(183,28,28,.25);
+    }
+    .btn-delete:hover{box-shadow:0 14px 26px rgba(183,28,28,.35)}
+
+    .btn-toggle{
+      background:linear-gradient(45deg,#1b5e20,#2e7d32);
+      padding:.42rem .75rem;
+      font-size:.85rem;
+      box-shadow:0 10px 18px rgba(27,94,32,.22);
+    }
+    .btn-toggle:hover{box-shadow:0 14px 26px rgba(27,94,32,.32)}
+
+    .words-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+      gap:1.25rem;
+      margin-top:1.25rem;
+    }
+    .word-card{
+      background:linear-gradient(45deg,#fff5e6,#fff);
+      border:2px solid rgba(212,167,106,.75);
+      border-radius:14px;
+      padding:1.3rem 1.2rem;
+      box-shadow:0 18px 35px rgba(0,0,0,.14),
+                 inset 0 0 0 1px rgba(255,255,255,.35);
+      transition:transform .2s, box-shadow .2s;
+      position:relative;
+      overflow:hidden;
+    }
+    .word-card::before{
+      content:"";
+      position:absolute;
+      top:0; right:0;
+      width:44px;height:44px;
+      background:linear-gradient(225deg,transparent 50%,rgba(212,167,106,.28) 50%);
+      border-radius:0 14px 0 10px;
+      opacity:.9;
+    }
+    .word-card:hover{
+      transform:translateY(-4px);
+      box-shadow:0 26px 48px rgba(0,0,0,.18);
+    }
+    .word-title{
+      font-size:1.35rem;
+      font-weight:900;
+      margin-bottom:.35rem;
+      background:linear-gradient(45deg,#8b4513,#a0522d,#d2691e);
+      -webkit-background-clip:text;
+      background-clip:text;
+      -webkit-text-fill-color:transparent;
+    }
+    .word-author{
+      color:#6d4c41;
+      font-size:.9rem;
+      margin-bottom:.9rem;
+      opacity:.85;
+    }
+    .word-meaning{
+      color:#3e342c;
+      margin-bottom:.75rem;
+      line-height:1.55;
+    }
+    .word-sentence{
+      color:#5d4037;
+      font-style:italic;
+      margin-bottom:.75rem;
+      padding:.8rem .9rem;
+      background:rgba(255,255,255,.55);
+      border-left:3px solid #8b4513;
+      border-radius:10px;
+      box-shadow:inset 0 0 0 1px rgba(212,167,106,.35);
+    }
+    .word-telugu{
+      color:#3e342c;
+      font-size:.95rem;
+      margin-bottom:1rem;
+      padding:.65rem .8rem;
+      background:rgba(255,248,225,.65);
+      border-radius:10px;
+      border:1px solid rgba(212,167,106,.55);
+    }
+
+    .status-badge{
+      display:inline-block;
+      padding:.35rem .85rem;
+      border-radius:999px;
+      font-size:.85rem;
+      font-weight:900;
+      margin-bottom:.9rem;
+      border:1px solid rgba(0,0,0,.06);
+      box-shadow:0 10px 18px rgba(0,0,0,.08);
+    }
+    .status-published{
+      background:rgba(27,94,32,.12);
+      color:#1b5e20;
+      border-color:rgba(27,94,32,.25);
+    }
+    .status-draft{
+      background:rgba(109,76,65,.12);
+      color:#6d4c41;
+      border-color:rgba(109,76,65,.25);
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:1rem;
+      overflow:hidden;
+      border-radius:12px;
+      border:1px solid rgba(212,167,106,.65);
+      background:rgba(255,255,255,.35);
+    }
+    thead{
+      background:linear-gradient(45deg, rgba(139,69,19,.10), rgba(210,105,30,.08));
+    }
+    th{
+      padding:1rem;
+      text-align:left;
+      font-weight:900;
+      border-bottom:1px solid rgba(212,167,106,.75);
+      color:#5d4037;
+      letter-spacing:.2px;
+    }
+    td{
+      padding:1rem;
+      border-bottom:1px solid rgba(212,167,106,.35);
+      color:#3e342c;
+      vertical-align:top;
+    }
+    tr:hover{
+      background:rgba(255,255,255,.45);
+    }
+
+    .search-bar{
+      margin-bottom:1.25rem;
+      display:flex;
+      gap:1rem;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .search-bar input{
+      flex:1;
+      min-width:220px;
+    }
+
+    .modal{
+      display:none;
+      position:fixed;
+      top:0; left:0;
+      width:100%; height:100%;
+      background:rgba(0,0,0,.55);
+      z-index:1000;
+      align-items:center;
+      justify-content:center;
+      padding: 1rem;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+    .modal.active{display:flex;}
+    .modal-content{
+      background:linear-gradient(45deg,#fff5e6,#fff);
+      padding:2rem;
+      border-radius:14px;
+      max-width:520px;
+      width:90%;
+      box-shadow:0 30px 70px rgba(0,0,0,.35),
+                 inset 0 0 0 1px rgba(212,167,106,.55);
+      max-height:90vh;
+      overflow-y:auto;
+      border:2px solid #d4a76a;
+      position:relative;
+      animation:bookOpen .6s cubic-bezier(.23,1,.32,1) forwards;
+    }
+    .modal-content::before{
+      content:"";
+      position:absolute; top:0; right:0;
+      width:46px;height:46px;
+      background:linear-gradient(225deg,transparent 50%,rgba(212,167,106,.28) 50%);
+      border-radius:0 14px 0 10px;
+    }
+    .modal-close{
+      float:right;
+      font-size:1.4rem;
+      cursor:pointer;
+      background:rgba(255,255,255,.55);
+      border:1px solid rgba(212,167,106,.65);
+      color:#6d4c41;
+      width:40px;height:40px;
+      border-radius:999px;
+      display:grid;
+      place-items:center;
+      transition:transform .2s, box-shadow .2s;
+      box-shadow:0 10px 18px rgba(0,0,0,.12);
+    }
+    .modal-close:hover{
+      transform:translateY(-2px);
+      box-shadow:0 14px 26px rgba(0,0,0,.18);
+    }
+
+    .message{
+      padding:1rem;
+      border-radius:10px;
+      margin-bottom:1rem;
+      display:none;
+      animation:slideIn 0.3s ease;
+    }
+    .message.show{display:block;}
+    .message.success{
+      background:rgba(27,94,32,.12);
+      color:#1b5e20;
+      border:1px solid rgba(27,94,32,.25);
+    }
+    .message.error{
+      background:rgba(183,28,28,.12);
+      color:#b71c1c;
+      border:1px solid rgba(183,28,28,.25);
+    }
+    @keyframes slideIn{
+      from{transform:translateY(-10px);opacity:0;}
+      to{transform:translateY(0);opacity:1;}
+    }
+
+    @media (max-width: 768px){
+      .header{flex-direction:column;gap:1rem;text-align:center}
+      .header h1{font-size:1.35rem}
+      .user-info{max-width:80vw;margin-right:0}
+      .tabs{flex-direction:column}
+      .tab-btn{width:100%;text-align:left}
+      .words-grid{grid-template-columns:1fr}
+      table{font-size:.95rem}
+      th,td{padding:.8rem}
+      .search-bar{flex-direction:column}
+      .search-bar input{min-width:unset;width:100%}
+      .tab-content{padding:1.35rem}
+      .streak-card{flex-direction:column;text-align:center}
+      .streak-info{justify-content:center;width:100%}
+    }
+  </style>
+</head>
+<body>
+
+  <div class="floating-letters" id="floatingLetters"></div>
+
+  <div class="header">
+    <h1>📚 VOCABHUB Dashboard</h1>
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <span class="user-info" id="user-name">👤 Loading...</span>
+      <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="streak-card">
+      <div class="streak-info">
+        <div class="streak-number" id="streak-count">0</div>
+        <div class="streak-text">
+          <h3>Day Streak! 🔥</h3>
+          <p id="last-word-text">Last word: Never</p>
+          <p style="color:#c62828; font-weight:700;">Add 1+ word daily to maintain!</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="freeze-warning" id="freeze-warning">
+      <h3>🔒 Account Frozen</h3>
+      <p>⚠️ You missed yesterday's word requirement!</p>
+      <p id="freeze-time">Account will unlock in: 1 hour</p>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('profile', event)">👤 Profile</button>
+      <button class="tab-btn" onclick="switchTab('my-words', event)">📝 My Words</button>
+      <button class="tab-btn" onclick="switchTab('all-words', event)">🌐 All Words</button>
+      <button class="tab-btn" onclick="switchTab('leaderboard', event)">🏆 Leaderboard</button>
+    </div>
+
+    <!-- PROFILE TAB -->
+    <div class="tab-content active" id="profile">
+      <div class="section">
+        <h2>👤 Profile Settings</h2>
+        <div id="profileMessage" class="message"></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+          <div>
+            <h3 style="margin-bottom: 1.2rem; font-size: 1.1rem; color:#5d4037; font-weight:900;">Edit Profile</h3>
+            <div class="form-group">
+              <label>Full Name</label>
+              <input type="text" id="profile-name" placeholder="Enter your full name" />
+            </div>
+            <div class="form-group">
+              <label>Email Address</label>
+              <input type="email" id="profile-email" placeholder="Enter your email" />
+            </div>
+            <div class="form-group">
+              <label>Mobile Number</label>
+              <input type="text" id="profile-mobile" placeholder="Enter your mobile number" />
+            </div>
+            <button class="btn" onclick="updateProfile()">💾 Save Profile</button>
+          </div>
+
+          <div>
+            <h3 style="margin-bottom: 1.2rem; font-size: 1.1rem; color:#5d4037; font-weight:900;">Change Password</h3>
+            <div id="passwordMessage" class="message"></div>
+            <div class="form-group">
+              <label>Old Password</label>
+              <input type="password" id="old-password" placeholder="Enter current password" />
+            </div>
+            <div class="form-group">
+              <label>New Password</label>
+              <input type="password" id="new-password" placeholder="Enter new password" />
+            </div>
+            <div class="form-group">
+              <label>Confirm Password</label>
+              <input type="password" id="confirm-password" placeholder="Confirm new password" />
+            </div>
+            <button class="btn" onclick="changePassword()">🔐 Change Password</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MY WORDS TAB -->
+    <div class="tab-content" id="my-words">
+      <div class="section">
+        <h2>📝 My Words</h2>
+        <div id="addWordMessage" class="message"></div>
+        <div style="margin-bottom: 2rem;">
+          <h3 style="margin-bottom: 1rem; font-size: 1.1rem; color:#5d4037; font-weight:900;">➕ Add New Word</h3>
+          <p style="color:#d32f2f; font-weight:700; margin-bottom:1rem;">📌 Add at least 1 word daily to keep your streak alive! 🔥</p>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label>Word</label>
+              <input type="text" id="new-word" placeholder="Enter word..." />
+            </div>
+            <div class="form-group">
+              <label>Meaning</label>
+              <input type="text" id="new-meaning" placeholder="Enter meaning..." />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Sentence</label>
+            <textarea id="new-sentence" placeholder="Enter example sentence..." style="min-height: 60px;"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Telugu Meaning (Optional)</label>
+            <input type="text" id="new-telugu" placeholder="తెలుగు అర్థం..." />
+          </div>
+          <button class="btn" id="addWordBtn" onclick="addWord()">➕ Add Word</button>
+        </div>
+
+        <h3 style="margin-bottom: 1rem; font-size: 1.1rem; color:#5d4037; font-weight:900;">Your Words</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Word</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="my-words-table">
+            <tr><td colspan="4" style="text-align: center; padding: 2rem; color: #6d4c41;">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ALL WORDS TAB -->
+    <div class="tab-content" id="all-words">
+      <div class="section">
+        <h2>🌐 All Words from Users</h2>
+        <div class="search-bar">
+          <input type="text" id="all-words-search" placeholder="Search words..." onkeyup="searchAllWords()" />
+          <button class="btn" onclick="loadAllWords()">🔄 Refresh</button>
+        </div>
+        <div class="words-grid" id="all-words-grid">
+          <p style="text-align: center; color: #6d4c41;">Loading words...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEADERBOARD TAB -->
+    <div class="tab-content" id="leaderboard">
+      <div class="section">
+        <h2>🏆 Leaderboard</h2>
+        <p style="color:#5d4037; margin-bottom:1rem; font-weight:600;">
+          Top learners ranked by current streak and total words added.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>User</th>
+              <th>Streak (days)</th>
+              <th>Total Words</th>
+              <th>Last Word Date</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboard-table">
+            <tr>
+              <td colspan="5" style="text-align:center; padding:1.5rem; color:#6d4c41;">
+                Loading leaderboard...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT WORD MODAL -->
+  <div class="modal" id="edit-word-modal">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeModal('edit-word-modal')">✕</button>
+      <h2 style="margin-bottom: 1.2rem; color:#8b4513; font-weight:900;">✏️ Edit Word</h2>
+      <div class="form-group">
+        <label>Word</label>
+        <input type="text" id="edit-word-name" />
+      </div>
+      <div class="form-group">
+        <label>Meaning</label>
+        <textarea id="edit-word-meaning" style="min-height: 80px;"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Sentence</label>
+        <textarea id="edit-word-sentence" style="min-height: 80px;"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Telugu Meaning</label>
+        <input type="text" id="edit-word-telugu" />
+      </div>
+      <button class="btn" onclick="saveWordEdit()">💾 Save Changes</button>
+      <button class="btn btn-secondary" onclick="closeModal('edit-word-modal')">❌ Cancel</button>
+    </div>
+  </div>
+
+  <script>
+    let currentEditingWordId = null;
+    let allWordsData = [];
+    let currentUser = null;
+
+    // Floating letters background
+    (function () {
+      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+      const flContainer = document.getElementById('floatingLetters');
+      if (!flContainer) return;
+      for (let i = 0; i < 25; i++) {
+        const el = document.createElement('div');
+        el.className = 'letter';
+        el.textContent = letters[Math.floor(Math.random() * letters.length)];
+        el.style.left = `${Math.random() * 100}%`;
+        el.style.top = `${Math.random() * 100}%`;
+        el.style.animationDelay = `${Math.random() * 5}s`;
+        flContainer.appendChild(el);
+      }
+    })();
+
+    function showMessage(elementId, message, type) {
+      const msgEl = document.getElementById(elementId);
+      msgEl.textContent = message;
+      msgEl.className = `message ${type} show`;
+      setTimeout(() => msgEl.classList.remove('show'), 4000);
+    }
+
+    function logout() {
+      if (confirm('Are you sure you want to logout?')) {
+        fetch('/api/user/activity', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ action: 'logout' })
+        }).then(() => {
+          location.href = '/user-login';
+        }).catch(err => {
+          console.error('Logout error:', err);
+          location.href = '/user-login';
+        });
+      }
+    }
+
+    function switchTab(tab, event) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById(tab).classList.add('active');
+      event.target.classList.add('active');
+
+      if (tab === 'profile') loadProfile();
+      else if (tab === 'my-words') loadMyWords();
+      else if (tab === 'all-words') loadAllWords();
+      else if (tab === 'leaderboard') loadLeaderboard();
+    }
+
+    function loadProfile() {
+      console.log('🔄 Loading profile...');
+      fetch('/api/profile', { credentials: 'include' })
+        .then(r => {
+          console.log('Profile response status:', r.status);
+          if (r.status === 401) {
+            console.log('❌ Unauthorized - redirecting to login');
+            location.href = '/user-login';
+            throw new Error('Not authenticated');
+          }
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          return r.json();
+        })
+        .then(user => {
+          console.log('✅ Profile loaded:', user);
+          currentUser = user;
+          
+          document.getElementById('user-name').textContent = `👤 ${user.name || 'User'}`;
+          document.getElementById('profile-name').value = user.name || '';
+          document.getElementById('profile-email').value = user.email || '';
+          document.getElementById('profile-mobile').value = user.mobile || '';
+          
+          document.getElementById('streak-count').textContent = user.consecutive_days || 0;
+          const lastDate = user.last_word_date || 'Never';
+          document.getElementById('last-word-text').textContent = `Last word: ${lastDate}`;
+          
+          const freezeCard = document.getElementById('freeze-warning');
+          if (user.is_frozen && user.freeze_until) {
+            freezeCard.classList.add('active');
+            document.getElementById('addWordBtn').disabled = true;
+            const timeLeft = Math.ceil((new Date(user.freeze_until) - new Date()) / (1000 * 60));
+            document.getElementById('freeze-time').textContent = `Account will unlock in: ${timeLeft} minutes`;
+          } else {
+            freezeCard.classList.remove('active');
+            document.getElementById('addWordBtn').disabled = false;
+          }
+        })
+        .catch(err => {
+          console.error('❌ Profile load error:', err);
+          showMessage('profileMessage', `❌ Error: ${err.message}`, 'error');
+        });
+    }
+
+    function updateFreezeCountdown() {
+      if (!currentUser || !currentUser.is_frozen) return;
+      
+      const now = new Date();
+      const freezeEnd = new Date(currentUser.freeze_until);
+      const diff = freezeEnd - now;
+      
+      if (diff > 0) {
+        const minutes = Math.floor(diff / 60000);
+        const seconds = Math.floor((diff % 60000) / 1000);
+        document.getElementById('freeze-time').textContent = 
+          `Account will unlock in: ${minutes}m ${seconds}s`;
+      } else {
+        document.getElementById('freeze-warning').classList.remove('active');
+        document.getElementById('addWordBtn').disabled = false;
+        currentUser.is_frozen = false;
+      }
+    }
+
+    function updateProfile() {
+      const name = document.getElementById('profile-name').value.trim();
+      const email = document.getElementById('profile-email').value.trim();
+      const mobile = document.getElementById('profile-mobile').value.trim();
+
+      if (!name || !email) {
+        showMessage('profileMessage', '❌ Name and email are required', 'error');
+        return;
+      }
+
+      fetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name, email, mobile })
+      }).then(r => r.json())
+        .then(res => {
+          if (res.success) {
+            showMessage('profileMessage', '✅ Profile updated successfully!', 'success');
+            loadProfile();
+          } else {
+            showMessage('profileMessage', '❌ ' + (res.error || 'Update failed'), 'error');
+          }
+        })
+        .catch(err => {
+          console.error('Update error:', err);
+          showMessage('profileMessage', '❌ Error updating profile', 'error');
+        });
+    }
+
+    function changePassword() {
+      const oldPwd = document.getElementById('old-password').value.trim();
+      const newPwd = document.getElementById('new-password').value.trim();
+      const confirmPwd = document.getElementById('confirm-password').value.trim();
+
+      if (!oldPwd || !newPwd || !confirmPwd) {
+        showMessage('passwordMessage', '❌ All fields are required', 'error');
+        return;
+      }
+
+      if (newPwd !== confirmPwd) {
+        showMessage('passwordMessage', '❌ New passwords do not match', 'error');
+        return;
+      }
+
+      if (newPwd.length < 6) {
+        showMessage('passwordMessage', '❌ Password must be at least 6 characters', 'error');
+        return;
+      }
+
+      fetch('/api/password', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ oldPassword: oldPwd, newPassword: newPwd })
+      }).then(r => r.json())
+        .then(res => {
+          if (res.success) {
+            showMessage('passwordMessage', '✅ Password changed successfully!', 'success');
+            document.getElementById('old-password').value = '';
+            document.getElementById('new-password').value = '';
+            document.getElementById('confirm-password').value = '';
+          } else {
+            showMessage('passwordMessage', '❌ ' + (res.error || 'Password change failed'), 'error');
+          }
+        })
+        .catch(err => {
+          console.error('Password change error:', err);
+          showMessage('passwordMessage', '❌ Error changing password', 'error');
+        });
+    }
+
+    function addWord() {
+      if (!currentUser) {
+        showMessage('addWordMessage', '❌ Please load profile first', 'error');
+        return;
+      }
+
+      if (currentUser.is_frozen) {
+        showMessage('addWordMessage', '❌ Account is frozen! Cannot add words until freeze expires.', 'error');
+        return;
+      }
+
+      const word = document.getElementById('new-word').value.trim();
+      const meaning = document.getElementById('new-meaning').value.trim();
+      const sentence = document.getElementById('new-sentence').value.trim();
+      const telugu = document.getElementById('new-telugu').value.trim();
+
+      if (!word || !meaning || !sentence) {
+        showMessage('addWordMessage', '❌ Word, meaning, and sentence are required', 'error');
+        return;
+      }
+
+      fetch('/api/words', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ word, meaning, sentence, telugu_meaning: telugu })
+      }).then(r => r.json())
+        .then(res => {
+          if (res.success) {
+            showMessage('addWordMessage', `✅ ${res.message}`, 'success');
+            document.getElementById('new-word').value = '';
+            document.getElementById('new-meaning').value = '';
+            document.getElementById('new-sentence').value = '';
+            document.getElementById('new-telugu').value = '';
+            loadMyWords();
+            loadProfile();
+          } else {
+            showMessage('addWordMessage', '❌ ' + (res.error || 'Failed to add word'), 'error');
+          }
+        })
+        .catch(err => {
+          console.error('Add word error:', err);
+          showMessage('addWordMessage', '❌ Error adding word', 'error');
+        });
+    }
+
+    function loadMyWords() {
+      fetch('/api/mywords', { credentials: 'include' })
+        .then(r => r.json())
+        .then(words => {
+          const tbody = document.getElementById('my-words-table');
+          if (!words || words.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem; color: #6d4c41;">No words yet. Add your first word above!</td></tr>';
+            return;
+          }
+
+          tbody.innerHTML = words.map(w => `
+            <tr>
+              <td><strong>${w.word}</strong></td>
+              <td><span class="status-badge ${w.published ? 'status-published' : 'status-draft'}">${w.published ? '📤 Published' : '📦 Draft'}</span></td>
+              <td>${new Date(w.created_at).toLocaleDateString()}</td>
+              <td>
+                <button class="btn btn-toggle" onclick="togglePublish(${w.id}, ${!w.published})">${w.published ? '📦 Unpublish' : '📤 Publish'}</button>
+                <button class="btn btn-toggle" style="background: linear-gradient(45deg,#1d4ed8,#3b82f6); box-shadow:0 10px 18px rgba(59,130,246,.25);" onclick="openEditModal(${w.id}, '${w.word.replace(/'/g, "\\'")}', '${w.meaning.replace(/'/g, "\\'")}', '${w.sentence.replace(/'/g, "\\'")}', '${(w.telugu_meaning || '').replace(/'/g, "\\'")}')" >✏️ Edit</button>
+                <button class="btn btn-delete" onclick="deleteWord(${w.id})">🗑️ Delete</button>
+              </td>
+            </tr>
+          `).join('');
+        })
+        .catch(err => {
+          console.error('Load words error:', err);
+          document.getElementById('my-words-table').innerHTML = '<tr><td colspan="4" style="text-align: center; color: #c0392b;">Error loading words</td></tr>';
+        });
+    }
+
+    function togglePublish(id, publish) {
+      fetch(`/api/words/${id}/publish`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ published: publish })
+      }).then(r => r.json())
+        .then(res => {
+          loadMyWords();
+        })
+        .catch(err => console.error('Publish error:', err));
+    }
+
+    function openEditModal(id, word, meaning, sentence, telugu) {
+      currentEditingWordId = id;
+      document.getElementById('edit-word-name').value = word;
+      document.getElementById('edit-word-meaning').value = meaning;
+      document.getElementById('edit-word-sentence').value = sentence;
+      document.getElementById('edit-word-telugu').value = telugu;
+      document.getElementById('edit-word-modal').classList.add('active');
+    }
+
+    function saveWordEdit() {
+      const data = {
+        word: document.getElementById('edit-word-name').value.trim(),
+        meaning: document.getElementById('edit-word-meaning').value.trim(),
+        sentence: document.getElementById('edit-word-sentence').value.trim(),
+        telugu_meaning: document.getElementById('edit-word-telugu').value.trim()
+      };
+
+      if (!data.word || !data.meaning || !data.sentence) {
+        alert('❌ Word, meaning, and sentence are required');
+        return;
+      }
+
+      fetch(`/api/words/${currentEditingWordId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data)
+      }).then(r => r.json())
+        .then(res => {
+          if (res.success) {
+            alert('✅ Word updated!');
+            closeModal('edit-word-modal');
+            loadMyWords();
+          } else {
+            alert('❌ ' + (res.error || 'Update failed'));
+          }
+        })
+        .catch(err => {
+          console.error('Edit error:', err);
+          alert('❌ Error updating word');
+        });
+    }
+
+    function deleteWord(id) {
+      if (!confirm('Are you sure you want to delete this word?')) return;
+      
+      fetch(`/api/words/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      }).then(r => r.json())
+        .then(res => {
+          if (res.success) {
+            loadMyWords();
+          } else {
+            alert('❌ ' + (res.error || 'Delete failed'));
+          }
+        })
+        .catch(err => {
+          console.error('Delete error:', err);
+          alert('❌ Error deleting word');
+        });
+    }
+
+    function loadAllWords() {
+      fetch('/api/words', { credentials: 'include' })
+        .then(r => r.json())
+        .then(words => {
+          allWordsData = words || [];
+          displayAllWords(allWordsData);
+        })
+        .catch(err => {
+          console.error('Load all words error:', err);
+          document.getElementById('all-words-grid').innerHTML = '<p style="color: #c0392b;">Error loading words</p>';
+        });
+    }
+
+    function displayAllWords(words) {
+      const grid = document.getElementById('all-words-grid');
+      if (!words || words.length === 0) {
+        grid.innerHTML = '<p style="text-align: center; color: #6d4c41; grid-column: 1/-1;">No published words yet</p>';
+        return;
+      }
+
+      grid.innerHTML = words.map(w => `
+        <div class="word-card">
+          <div class="word-title">${w.word}</div>
+          <div class="word-author">by ${w.author || 'Unknown'}</div>
+          <span class="status-badge status-published">📤 Published</span>
+          <div class="word-meaning"><strong>Meaning:</strong> ${w.meaning}</div>
+          <div class="word-sentence">"${w.sentence}"</div>
+          ${w.telugu_meaning ? `<div class="word-telugu"><strong>తెలుగు:</strong> ${w.telugu_meaning}</div>` : ''}
+          <div style="color: rgba(93,64,55,.85); font-size: 0.9rem;">📅 ${new Date(w.created_at).toLocaleDateString()}</div>
+        </div>
+      `).join('');
+    }
+
+    function searchAllWords() {
+      const query = document.getElementById('all-words-search').value.toLowerCase();
+      const filtered = allWordsData.filter(w =>
+        w.word.toLowerCase().includes(query) ||
+        w.meaning.toLowerCase().includes(query) ||
+        (w.author && w.author.toLowerCase().includes(query))
+      );
+      displayAllWords(filtered);
+    }
+
+    function loadLeaderboard() {
+      fetch('/api/leaderboard', { credentials: 'include' })
+        .then(r => {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .then(rows => {
+          const tbody = document.getElementById('leaderboard-table');
+          if (!rows || rows.length === 0) {
+            tbody.innerHTML = `
+              <tr>
+                <td colspan="5" style="text-align:center; padding:1.5rem; color:#6d4c41;">
+                  No data yet. Ask users to start adding words!
+                </td>
+              </tr>`;
+            return;
+          }
+
+          tbody.innerHTML = rows.map(u => `
+            <tr>
+              <td>#${u.rank}</td>
+              <td>${u.name}</td>
+              <td>${u.streak}</td>
+              <td>${u.total_words}</td>
+              <td>${u.last_word_date || '—'}</td>
+            </tr>
+          `).join('');
+        })
+        .catch(err => {
+          console.error('Leaderboard load error:', err);
+          document.getElementById('leaderboard-table').innerHTML = `
+            <tr>
+              <td colspan="5" style="text-align:center; padding:1.5rem; color:#c0392b;">
+                Error loading leaderboard
+              </td>
+            </tr>`;
+        });
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('active');
+    }
+
+    window.addEventListener('click', (e) => {
+      if (e.target.classList.contains('modal')) {
+        e.target.classList.remove('active');
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      console.log('👤 Loading Dashboard...');
+      loadProfile();
+      loadMyWords();
+      
+      setInterval(() => {
+        loadProfile();
+        updateFreezeCountdown();
+      }, 5000);
+    });
+  </script>
+</body>
+</html>
