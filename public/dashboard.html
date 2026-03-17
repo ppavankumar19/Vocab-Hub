@@ -615,6 +615,29 @@
       .streak-card{flex-direction:column;text-align:center}
       .streak-info{justify-content:center;width:100%}
     }
+
+    /* ── Telugu Transliteration ─────────────────────── */
+    .telugu-toggle{
+      background:linear-gradient(45deg,#6a1b9a,#8e24aa);
+      color:#fff;border:none;padding:4px 12px;border-radius:999px;
+      font-size:.78rem;cursor:pointer;font-weight:700;
+      font-family:'Georgia',serif;transition:all .2s;
+      box-shadow:0 4px 10px rgba(106,27,154,.3);white-space:nowrap;
+    }
+    .telugu-toggle:hover{transform:translateY(-1px);filter:brightness(1.1);}
+    .telugu-toggle.active{
+      background:linear-gradient(45deg,#1b5e20,#2e7d32);
+      box-shadow:0 4px 10px rgba(27,94,32,.3);
+    }
+    .telugu-hint{
+      font-size:.82rem;color:#6a1b9a;margin-top:.5rem;
+      padding:.5rem .85rem;background:rgba(106,27,154,.08);
+      border-radius:8px;border-left:3px solid #8e24aa;
+    }
+    .telugu-hint kbd{
+      background:#e1bee7;border-radius:4px;padding:1px 5px;
+      font-family:monospace;font-size:.8rem;
+    }
   </style>
 </head>
 <body>
@@ -721,8 +744,14 @@
             <textarea id="new-sentence" placeholder="Enter example sentence..." style="min-height: 60px;"></textarea>
           </div>
           <div class="form-group">
-            <label>Telugu Meaning (Optional)</label>
+            <label style="display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;">
+              Telugu Meaning (Optional)
+              <button type="button" id="telugu-toggle-add" class="telugu-toggle" onclick="toggleTeluguMode('add')">🔤 Enable Transliteration</button>
+            </label>
             <input type="text" id="new-telugu" placeholder="తెలుగు అర్థం..." />
+            <div id="telugu-hint-add" class="telugu-hint" style="display:none;">
+              💡 Type English phonetics &amp; press <kbd>Space</kbd> to convert into Telugu script. Example: "naaku" → నాకు &nbsp;|&nbsp; "telugu" → తెలుగు &nbsp;|&nbsp; "paata" → పాత
+            </div>
           </div>
           <button class="btn" id="addWordBtn" onclick="addWord()">➕ Add Word</button>
         </div>
@@ -805,8 +834,14 @@
         <textarea id="edit-word-sentence" style="min-height: 80px;"></textarea>
       </div>
       <div class="form-group">
-        <label>Telugu Meaning</label>
-        <input type="text" id="edit-word-telugu" />
+        <label style="display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;">
+          Telugu Meaning
+          <button type="button" id="telugu-toggle-edit" class="telugu-toggle" onclick="toggleTeluguMode('edit')">🔤 Enable Transliteration</button>
+        </label>
+        <input type="text" id="edit-word-telugu" placeholder="తెలుగు అర్థం..." />
+        <div id="telugu-hint-edit" class="telugu-hint" style="display:none;">
+          💡 Type English phonetics &amp; press <kbd>Space</kbd> to convert. Example: "naaku" → నాకు
+        </div>
       </div>
       <button class="btn" onclick="saveWordEdit()">💾 Save Changes</button>
       <button class="btn btn-secondary" onclick="closeModal('edit-word-modal')">❌ Cancel</button>
@@ -817,6 +852,14 @@
     let currentEditingWordId = null;
     let allWordsData = [];
     let currentUser = null;
+    let wordsCache = {};
+
+    function escHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
 
     // Floating letters background
     (function () {
@@ -843,15 +886,18 @@
 
     function logout() {
       if (confirm('Are you sure you want to logout?')) {
-        fetch('/api/user/activity', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ action: 'logout' })
-        }).then(() => {
-          location.href = '/user-login';
-        }).catch(err => {
-          console.error('Logout error:', err);
+        Promise.all([
+          fetch('/api/user/activity', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ action: 'logout' })
+          }).catch(() => {}),
+          fetch('/api/logout', {
+            method: 'POST',
+            credentials: 'include'
+          }).catch(() => {})
+        ]).finally(() => {
           location.href = '/user-login';
         });
       }
@@ -1059,14 +1105,17 @@
             return;
           }
 
+          wordsCache = {};
+          words.forEach(w => { wordsCache[w.id] = w; });
+
           tbody.innerHTML = words.map(w => `
             <tr>
-              <td><strong>${w.word}</strong></td>
+              <td><strong>${escHtml(w.word)}</strong></td>
               <td><span class="status-badge ${w.published ? 'status-published' : 'status-draft'}">${w.published ? '📤 Published' : '📦 Draft'}</span></td>
               <td>${new Date(w.created_at).toLocaleDateString()}</td>
               <td>
                 <button class="btn btn-toggle" onclick="togglePublish(${w.id}, ${!w.published})">${w.published ? '📦 Unpublish' : '📤 Publish'}</button>
-                <button class="btn btn-toggle" style="background: linear-gradient(45deg,#1d4ed8,#3b82f6); box-shadow:0 10px 18px rgba(59,130,246,.25);" onclick="openEditModal(${w.id}, '${w.word.replace(/'/g, "\\'")}', '${w.meaning.replace(/'/g, "\\'")}', '${w.sentence.replace(/'/g, "\\'")}', '${(w.telugu_meaning || '').replace(/'/g, "\\'")}')" >✏️ Edit</button>
+                <button class="btn btn-toggle" style="background:linear-gradient(45deg,#1d4ed8,#3b82f6);box-shadow:0 10px 18px rgba(59,130,246,.25);" onclick="openEditModalById(${w.id})">✏️ Edit</button>
                 <button class="btn btn-delete" onclick="deleteWord(${w.id})">🗑️ Delete</button>
               </td>
             </tr>
@@ -1076,6 +1125,17 @@
           console.error('Load words error:', err);
           document.getElementById('my-words-table').innerHTML = '<tr><td colspan="4" style="text-align: center; color: #c0392b;">Error loading words</td></tr>';
         });
+    }
+
+    function openEditModalById(id) {
+      const w = wordsCache[id];
+      if (!w) return;
+      currentEditingWordId = id;
+      document.getElementById('edit-word-name').value = w.word;
+      document.getElementById('edit-word-meaning').value = w.meaning;
+      document.getElementById('edit-word-sentence').value = w.sentence;
+      document.getElementById('edit-word-telugu').value = w.telugu_meaning || '';
+      document.getElementById('edit-word-modal').classList.add('active');
     }
 
     function togglePublish(id, publish) {
@@ -1109,7 +1169,8 @@
       };
 
       if (!data.word || !data.meaning || !data.sentence) {
-        alert('❌ Word, meaning, and sentence are required');
+        showMessage('addWordMessage', '❌ Word, meaning, and sentence are required', 'error');
+        closeModal('edit-word-modal');
         return;
       }
 
@@ -1121,16 +1182,18 @@
       }).then(r => r.json())
         .then(res => {
           if (res.success) {
-            alert('✅ Word updated!');
             closeModal('edit-word-modal');
+            showMessage('addWordMessage', '✅ Word updated successfully!', 'success');
             loadMyWords();
           } else {
-            alert('❌ ' + (res.error || 'Update failed'));
+            showMessage('addWordMessage', '❌ ' + (res.error || 'Update failed'), 'error');
+            closeModal('edit-word-modal');
           }
         })
         .catch(err => {
           console.error('Edit error:', err);
-          alert('❌ Error updating word');
+          showMessage('addWordMessage', '❌ Error updating word', 'error');
+          closeModal('edit-word-modal');
         });
     }
 
@@ -1143,14 +1206,15 @@
       }).then(r => r.json())
         .then(res => {
           if (res.success) {
+            showMessage('addWordMessage', '✅ Word deleted.', 'success');
             loadMyWords();
           } else {
-            alert('❌ ' + (res.error || 'Delete failed'));
+            showMessage('addWordMessage', '❌ ' + (res.error || 'Delete failed'), 'error');
           }
         })
         .catch(err => {
           console.error('Delete error:', err);
-          alert('❌ Error deleting word');
+          showMessage('addWordMessage', '❌ Error deleting word', 'error');
         });
     }
 
@@ -1176,12 +1240,12 @@
 
       grid.innerHTML = words.map(w => `
         <div class="word-card">
-          <div class="word-title">${w.word}</div>
-          <div class="word-author">by ${w.author || 'Unknown'}</div>
+          <div class="word-title">${escHtml(w.word)}</div>
+          <div class="word-author">by ${escHtml(w.author || 'Unknown')}</div>
           <span class="status-badge status-published">📤 Published</span>
-          <div class="word-meaning"><strong>Meaning:</strong> ${w.meaning}</div>
-          <div class="word-sentence">"${w.sentence}"</div>
-          ${w.telugu_meaning ? `<div class="word-telugu"><strong>తెలుగు:</strong> ${w.telugu_meaning}</div>` : ''}
+          <div class="word-meaning"><strong>Meaning:</strong> ${escHtml(w.meaning)}</div>
+          <div class="word-sentence">"${escHtml(w.sentence)}"</div>
+          ${w.telugu_meaning ? `<div class="word-telugu"><strong>తెలుగు:</strong> ${escHtml(w.telugu_meaning)}</div>` : ''}
           <div style="color: rgba(93,64,55,.85); font-size: 0.9rem;">📅 ${new Date(w.created_at).toLocaleDateString()}</div>
         </div>
       `).join('');
@@ -1246,15 +1310,143 @@
       }
     });
 
+    // ══════════════════════════════════════════════════
+    // TELUGU TRANSLITERATION ENGINE
+    // Type English phonetics → press Space → Telugu script
+    // Examples: "naaku" → నాకు | "telugu" → తెలుగు | "paata" → పాత
+    // ══════════════════════════════════════════════════
+    const _HALANT = '్'; // U+0C4D Telugu Virama
+
+    const _CONSONANTS = [
+      // Clusters (longer matches first)
+      ['ksh','క్ష'],
+      ['kh','ఖ'],['gh','ఘ'],['ch','చ'],['jh','ఝ'],
+      ['Th','ఠ'],['Dh','ఢ'],['th','థ'],['dh','ధ'],
+      ['ph','ఫ'],['bh','భ'],['Sh','ష'],['sh','శ'],
+      ['ng','ఙ'],['ny','ఞ'],
+      // Singles
+      ['k','క'],['g','గ'],['j','జ'],['c','చ'],
+      ['T','ట'],['D','డ'],['N','ణ'],
+      ['t','త'],['d','ద'],
+      ['p','ప'],['b','బ'],
+      ['m','మ'],['y','య'],['r','ర'],
+      ['l','ల'],['L','ళ'],
+      ['v','వ'],['w','వ'],
+      ['s','స'],['h','హ'],
+      ['f','ఫ'],['n','న'],['R','ఱ'],
+    ];
+
+    // [roman, standalone-vowel, vowel-matra]
+    const _VOWELS = [
+      ['aa','ఆ','ా'],['A','ఆ','ా'],
+      ['ii','ఈ','ీ'],['ee','ఈ','ీ'],['I','ఈ','ీ'],
+      ['uu','ఊ','ూ'],['oo','ఓ','ో'],['U','ఊ','ూ'],
+      ['ai','ఐ','ై'],
+      ['au','ఔ','ౌ'],['ou','ఔ','ౌ'],
+      ['E','ఏ','ే'],['ae','ఏ','ే'],
+      ['O','ఓ','ో'],['oe','ఓ','ో'],
+      ['a','అ',''],
+      ['i','ఇ','ి'],
+      ['u','ఉ','ు'],
+      ['e','ఎ','ె'],
+      ['o','ఒ','ొ'],
+    ];
+
+    function toTelugu(text) {
+      if (!text) return '';
+      let result = '';
+      let i = 0;
+      while (i < text.length) {
+        if (text[i] === 'M') { result += 'ం'; i++; continue; }
+        if (text[i] === 'H') { result += 'ః'; i++; continue; }
+
+        // Try consonant
+        let cons = null, consLen = 0;
+        for (const [rom, tel] of _CONSONANTS) {
+          if (text.substr(i, rom.length) === rom) {
+            cons = tel; consLen = rom.length; break;
+          }
+        }
+
+        if (cons !== null) {
+          i += consLen;
+          let matra = '', vowLen = 0, foundVow = false;
+          for (const [rom, , mat] of _VOWELS) {
+            if (text.substr(i, rom.length) === rom) {
+              matra = mat; vowLen = rom.length; foundVow = true; break;
+            }
+          }
+          if (foundVow) {
+            result += cons + matra; // '' = inherent 'a'
+            i += vowLen;
+          } else {
+            result += cons + _HALANT; // conjunct / no vowel
+          }
+        } else {
+          // Try standalone vowel
+          let found = false;
+          for (const [rom, standalone] of _VOWELS) {
+            if (text.substr(i, rom.length) === rom) {
+              result += standalone; i += rom.length; found = true; break;
+            }
+          }
+          if (!found) { result += text[i]; i++; }
+        }
+      }
+      result = result.replace(/్$/g, '');           // trailing halant
+      result = result.replace(/్([\s.,!?])/g, '$1'); // halant before punctuation
+      return result;
+    }
+
+    const _teluguModes = { add: false, edit: false };
+
+    function toggleTeluguMode(form) {
+      _teluguModes[form] = !_teluguModes[form];
+      const on = _teluguModes[form];
+      const btn = document.getElementById('telugu-toggle-' + form);
+      const hint = document.getElementById('telugu-hint-' + form);
+      const inputId = form === 'add' ? 'new-telugu' : 'edit-word-telugu';
+      const input = document.getElementById(inputId);
+      btn.textContent = on ? '✅ Transliteration ON' : '🔤 Enable Transliteration';
+      btn.classList.toggle('active', on);
+      if (hint) hint.style.display = on ? 'block' : 'none';
+      if (input) input.placeholder = on
+        ? 'Type phonetics: "namasthe" → నమస్తే'
+        : 'తెలుగు అర్థం...';
+    }
+
+    function _setupTeluguInput(inputId, formKey) {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      input.addEventListener('keydown', function(e) {
+        if (!_teluguModes[formKey]) return;
+        if (e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault();
+          const text = this.value;
+          const lastSpace = text.lastIndexOf(' ');
+          const word = text.substring(lastSpace + 1);
+          if (word.trim()) {
+            const converted = toTelugu(word.trim());
+            const before = lastSpace >= 0 ? text.substring(0, lastSpace + 1) : '';
+            this.value = before + converted + ' ';
+            this.setSelectionRange(this.value.length, this.value.length);
+          }
+        }
+      });
+    }
+    // ══════════════════════════════════════════════════
+
     window.addEventListener('DOMContentLoaded', () => {
       console.log('👤 Loading Dashboard...');
       loadProfile();
       loadMyWords();
-      
+      _setupTeluguInput('new-telugu', 'add');
+      _setupTeluguInput('edit-word-telugu', 'edit');
+
       setInterval(() => {
         loadProfile();
         updateFreezeCountdown();
-      }, 5000);
+      }, 30000);
     });
   </script>
 </body>
