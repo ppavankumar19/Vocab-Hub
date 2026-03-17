@@ -233,10 +233,16 @@ app.get("/api/profile", checkAuth, async (req, res) => {
       console.log("   Final streak:", streak);
     }
 
+    const wordCountRes = await db.query(
+      `SELECT COUNT(*)::int AS total FROM words WHERE user_id = $1`,
+      [req.user.id]
+    );
+    const totalWords = wordCountRes.rows[0]?.total || 0;
+
     return res.json({
       ...user,
       consecutive_days: streak,
-      total_words: dateStrings ? dateStrings.length : 0,
+      total_words: totalWords,
       last_word_date: lastWordDate,
       is_frozen: false,
       freeze_until: null,
@@ -595,6 +601,12 @@ app.delete("/api/admin/words/:id", checkAuth, async (req, res) => {
     console.error("Admin delete word error:", err);
     return res.status(500).json({ error: "Delete failed" });
   }
+});
+
+// ==================== LOGOUT ====================
+app.post("/api/logout", (req, res) => {
+  res.clearCookie("token", { httpOnly: true, path: "/" });
+  return res.json({ success: true });
 });
 
 // ==================== ANALYTICS & VISITOR TRACKING ====================
