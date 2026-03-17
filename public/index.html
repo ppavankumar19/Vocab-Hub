@@ -807,12 +807,20 @@
       updateTimerDisplay();
     }
 
+    function escHtml(str) {
+      return String(str || '')
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
     function loadWords() {
       fetch('/api/words')
         .then(r => r.json())
         .then(words => {
           const grid = document.getElementById('words-grid');
           document.getElementById('word-count').textContent = words.length;
+          const uniqueAuthors = new Set(words.map(w => w.author));
+          document.getElementById('user-count').textContent = uniqueAuthors.size;
 
           if (words.length === 0) {
             grid.innerHTML = '<p style="text-align:center;color:#6d4c41;grid-column:1/-1;font-size:1.1rem">📚 No words yet. Be the first to contribute!</p>';
@@ -822,24 +830,15 @@
           grid.innerHTML = words.map((w, i) => `
             <div class="word-card" style="animation-delay: ${i * 0.1}s">
               <div class="word-badge">📖 Dictionary</div>
-              <div class="word-title">${w.word}</div>
-              <div class="word-meaning"><strong>Meaning:</strong><br>${w.meaning}</div>
-              <div class="word-sentence"><strong>✏️ Sentence:</strong><br>"${w.sentence}"</div>
-              ${w.telugu_meaning ? `<div class="word-telugu"><strong>🇹🇪 Telugu:</strong> ${w.telugu_meaning}</div>` : ''}
-              <div class="word-author">— <strong>${w.author}</strong></div>
+              <div class="word-title">${escHtml(w.word)}</div>
+              <div class="word-meaning"><strong>Meaning:</strong><br>${escHtml(w.meaning)}</div>
+              <div class="word-sentence"><strong>✏️ Sentence:</strong><br>"${escHtml(w.sentence)}"</div>
+              ${w.telugu_meaning ? `<div class="word-telugu"><strong>🇹🇪 Telugu:</strong> ${escHtml(w.telugu_meaning)}</div>` : ''}
+              <div class="word-author">— <strong>${escHtml(w.author)}</strong></div>
             </div>
           `).join('');
         })
         .catch(err => console.error('Error loading words:', err));
-    }
-
-    function loadStats() {
-      fetch('/api/words')
-        .then(r => r.json())
-        .then(words => {
-          const uniqueAuthors = new Set(words.map(w => w.author));
-          document.getElementById('user-count').textContent = uniqueAuthors.size;
-        });
     }
 
     function trackVisitor() {
@@ -866,7 +865,6 @@
       initSession();
       startTimers();
       loadWords();
-      loadStats();
       trackVisitor();
     });
 
