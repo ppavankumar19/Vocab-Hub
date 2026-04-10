@@ -2,6 +2,7 @@
 
 const express = require("express");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 const cookieParser = require("cookie-parser");
 const path = require("path");
 const os = require("os");
@@ -100,10 +101,11 @@ app.post("/api/register", async (req, res) => {
   }
 
   try {
+    const hash = await bcrypt.hash(password, 10);
     await db.query(
       `INSERT INTO users (name, email, mobile, password_hash, role)
        VALUES ($1, $2, $3, $4, 'user')`,
-      [name, email, mobile || "", password]
+      [name, email, mobile || "", hash]
     );
     return res.json({ success: true, message: "Signup successful! Login now." });
   } catch (err) {
@@ -130,9 +132,21 @@ app.post("/api/user/login", async (req, res) => {
     }
 
     console.log("✅ User found:", user.name);
-    console.log("   DB Pass:", user.password_hash, "| Input:", password);
 
-    if (user.password_hash !== password) {
+    // Support legacy plain-text passwords with automatic upgrade to bcrypt
+    const isBcrypt = user.password_hash.startsWith("$2");
+    let match;
+    if (isBcrypt) {
+      match = await bcrypt.compare(password, user.password_hash);
+    } else {
+      match = user.password_hash === password;
+      if (match) {
+        const upgraded = await bcrypt.hash(password, 10);
+        await db.query(`UPDATE users SET password_hash = $1 WHERE id = $2`, [upgraded, user.id]);
+      }
+    }
+
+    if (!match) {
       console.log("❌ Password mismatch");
       return res.status(401).json({ error: "Wrong password" });
     }
@@ -168,9 +182,12 @@ app.post("/api/admin/login", (req, res) => {
   const { email, password } = req.body;
   console.log("\n🔐 ADMIN LOGIN:", email);
 
-  if (email === "admin@dailyword.com" && password === "admin123") {
+  const adminEmail = process.env.ADMIN_EMAIL || "admin@dailyword.com";
+  const adminPassword = process.env.ADMIN_PASSWORD || "admin123";
+
+  if (email === adminEmail && password === adminPassword) {
     const token = jwt.sign(
-      { id: 1, email: "admin@dailyword.com", role: "admin", name: "Admin" },
+      { id: 1, email: adminEmail, role: "admin", name: "Admin" },
       process.env.JWT_SECRET || "secret123",
       { expiresIn: "7d" }
     );
@@ -283,13 +300,19 @@ app.put("/api/password", checkAuth, async (req, res) => {
     const user = userRes.rows[0];
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    if (user.password_hash !== oldPassword) {
+    const isBcrypt = user.password_hash.startsWith("$2");
+    const match = isBcrypt
+      ? await bcrypt.compare(oldPassword, user.password_hash)
+      : user.password_hash === oldPassword;
+
+    if (!match) {
       return res.status(401).json({ error: "Old password is wrong" });
     }
 
+    const newHash = await bcrypt.hash(newPassword, 10);
     await db.query(
       `UPDATE users SET password_hash = $1 WHERE id = $2`,
-      [newPassword, req.user.id]
+      [newHash, req.user.id]
     );
     return res.json({ success: true, message: "Password reset successful!" });
   } catch (err) {
@@ -760,9 +783,7 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log(`   📱 Home:        http://${LOCAL_IP}:${PORT}`);
   console.log(`   👤 User Login:  http://${LOCAL_IP}:${PORT}/user-login`);
   console.log(`   👑 Admin Login: http://${LOCAL_IP}:${PORT}/admin-login`);
-  console.log(`\n🔐 Default Admin Credentials:`);
-  console.log(`   Email: admin@dailyword.com`);
-  console.log(`   Password: admin123`);
+  console.log(`\n🔐 Admin credentials loaded from environment (ADMIN_EMAIL / ADMIN_PASSWORD)`);
   console.log("\n" + "=".repeat(70));
   console.log("✅ Waiting for requests...\n");
 });
