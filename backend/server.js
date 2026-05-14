@@ -182,8 +182,13 @@ app.post("/api/admin/login", (req, res) => {
   const { email, password } = req.body;
   console.log("\n🔐 ADMIN LOGIN:", email);
 
-  const adminEmail = process.env.ADMIN_EMAIL || "admin@dailyword.com";
-  const adminPassword = process.env.ADMIN_PASSWORD || "admin123";
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (!adminEmail || !adminPassword) {
+    console.log("❌ ADMIN_EMAIL or ADMIN_PASSWORD not set in environment");
+    return res.status(500).json({ error: "Admin credentials not configured" });
+  }
 
   if (email === adminEmail && password === adminPassword) {
     const token = jwt.sign(
