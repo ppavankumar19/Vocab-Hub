@@ -218,7 +218,7 @@ illu     → ఇల్లు
 | name          | TEXT      | NOT NULL                 |
 | email         | TEXT      | UNIQUE, NOT NULL         |
 | mobile        | TEXT      |                          |
-| password_hash | TEXT      | ⚠️ plain text currently  |
+| password_hash | TEXT      | bcrypt hashed            |
 | role          | TEXT      | `user` / `admin`         |
 | created_at    | TIMESTAMP | default NOW()            |
 
@@ -351,8 +351,8 @@ Access:
 - User Login: `http://localhost:3000/user-login`
 - Admin Login: `http://localhost:3000/admin-login`
 
-Default admin: `admin@dailyword.com` / `admin123`
-> ⚠️ Change this in `server.js` → `/api/admin/login` before deploying.
+Default admin credentials are configured via environment variables (`ADMIN_EMAIL` / `ADMIN_PASSWORD` in `backend/.env`).
+> ⚠️ Set strong credentials before deploying.
 
 ---
 
@@ -372,8 +372,7 @@ Default admin: `admin@dailyword.com` / `admin123`
 
 | Issue | Severity | Notes |
 |-------|----------|-------|
-| Passwords stored as plain text | High | `bcryptjs` is installed but not used. Hash passwords before production. |
-| Admin credentials hardcoded | Medium | Move to `ADMIN_EMAIL` / `ADMIN_PASSWORD` env vars |
+| Legacy plain-text passwords | Low | Auto-upgraded to bcrypt on next login. New signups use bcrypt. |
 | No rate limiting on auth routes | Medium | Add `express-rate-limit` to `/api/register` and `/api/user/login` |
 | No HTTPS enforcement | Low | Render provides TLS; ensure HTTP→HTTPS redirect is on |
 

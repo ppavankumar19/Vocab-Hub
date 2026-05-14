@@ -174,8 +174,8 @@ Admin submits email + password
       ▼
 POST /api/admin/login
       │
-      ├─► Compare email to process.env.ADMIN_EMAIL (default: admin@dailyword.com)
-      ├─► Compare password to process.env.ADMIN_PASSWORD (default: admin123)
+      ├─► Compare email to process.env.ADMIN_EMAIL
+      ├─► Compare password to process.env.ADMIN_PASSWORD
       │
       ├─► Mismatch → 401 "Invalid credentials"
       │
