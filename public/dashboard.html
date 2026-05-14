@@ -600,6 +600,12 @@
       to{transform:translateY(0);opacity:1;}
     }
 
+    .table-wrapper{
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+      margin-top:1rem;
+    }
+
     @media (max-width: 768px){
       .header{flex-direction:column;gap:1rem;text-align:center}
       .header h1{font-size:1.35rem}
@@ -607,11 +613,11 @@
       .tabs{flex-direction:column}
       .tab-btn{width:100%;text-align:left}
       .words-grid{grid-template-columns:1fr}
-      table{font-size:.95rem}
+      table{font-size:.95rem;min-width:500px}
       th,td{padding:.8rem}
       .search-bar{flex-direction:column}
       .search-bar input{min-width:unset;width:100%}
-      .tab-content{padding:1.35rem}
+      .tab-content{padding:1.35rem 1rem}
       .streak-card{flex-direction:column;text-align:center}
       .streak-info{justify-content:center;width:100%}
     }
@@ -757,6 +763,7 @@
         </div>
 
         <h3 style="margin-bottom: 1rem; font-size: 1.1rem; color:#5d4037; font-weight:900;">Your Words</h3>
+        <div class="table-wrapper">
         <table>
           <thead>
             <tr>
@@ -770,6 +777,7 @@
             <tr><td colspan="4" style="text-align: center; padding: 2rem; color: #6d4c41;">Loading...</td></tr>
           </tbody>
         </table>
+        </div>
       </div>
     </div>
 
@@ -794,6 +802,7 @@
         <p style="color:#5d4037; margin-bottom:1rem; font-weight:600;">
           Top learners ranked by current streak and total words added.
         </p>
+        <div class="table-wrapper">
         <table>
           <thead>
             <tr>
@@ -812,6 +821,7 @@
             </tr>
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   </div>

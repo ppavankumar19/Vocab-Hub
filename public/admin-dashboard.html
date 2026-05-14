@@ -557,6 +557,12 @@
       margin:0;
     }
 
+    .table-wrapper{
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+      margin-top:1.2rem;
+    }
+
     @media (max-width:768px){
       .header{flex-direction:column;gap:1.2rem;text-align:center}
       .header h1{font-size:1.45rem}
@@ -564,12 +570,15 @@
       .tabs{flex-direction:column}
       .tab-btn{width:100%;text-align:left}
       .stats-grid{grid-template-columns:1fr}
-      table{font-size:.95rem}
+      table{font-size:.95rem;min-width:600px}
       th,td{padding:.9rem}
       .search-bar{flex-direction:column}
       .search-bar input{min-width:unset;width:100%}
-      .tab-content{padding:1.6rem}
+      .tab-content{padding:1.6rem 1rem}
       .modal-content{width:95%;padding:1.8rem}
+      #profile .section > div[style]{
+        grid-template-columns:1fr !important;
+      }
     }
   </style>
 </head>
@@ -675,6 +684,7 @@
           <button class="btn" onclick="loadUsers()">🔄 Refresh</button>
         </div>
         
+        <div class="table-wrapper">
         <table>
           <thead>
             <tr>
@@ -691,6 +701,7 @@
             <tr><td colspan="7" style="text-align: center; padding: 2rem; color: #6d4c41;">Loading...</td></tr>
           </tbody>
         </table>
+        </div>
       </div>
     </div>
 
@@ -703,6 +714,7 @@
           <button class="btn" onclick="loadWords()">🔄 Refresh</button>
         </div>
 
+        <div class="table-wrapper">
         <table>
           <thead>
             <tr>
@@ -718,6 +730,7 @@
             <tr><td colspan="6" style="text-align: center; padding: 2rem; color: #6d4c41;">Loading...</td></tr>
           </tbody>
         </table>
+        </div>
       </div>
     </div>
 
@@ -730,6 +743,7 @@
           <button class="btn btn-danger" onclick="showClearConfirmation()">🗑️ Clear All Visitors</button>
         </div>
 
+        <div class="table-wrapper">
         <table>
           <thead>
             <tr>
@@ -743,6 +757,7 @@
             <tr><td colspan="4" style="text-align: center; padding: 2rem; color: #6d4c41;">Loading...</td></tr>
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   </div>
